@@ -1,0 +1,35 @@
+Vigilance
+=========
+
+Vigilance is a derivative work based on Bruce, distributed under the GNU
+Affero General Public License version 3.0 (AGPL-3.0). See the LICENSE file
+for the full license text.
+
+Upstream project
+----------------
+Bruce - https://github.com/pr3y/Bruce
+Copyright (c) pr3y and the Bruce contributors.
+Licensed under AGPL-3.0.
+
+This distribution also includes work merged from Sor3nt.
+
+Statement of changes
+--------------------
+Vigilance modifies Bruce. The main changes are:
+
+- A new framebuffer-based user interface ("Sentinel HUD"): full-screen sprite
+  rendering with anti-aliased primitives, a live-radar home screen, restyled
+  menus, a lock-on boot animation, and a standby / screensaver scene.
+- Defensive-surveillance features added or reworked, including Bug Sweep,
+  BLE anti-tracker Watch, Tail Watch, Sub-GHz Census, an on-device Journal,
+  Guardian Eye / Sentinel Pulse, and a Swarm (ESP-NOW) mode.
+- User-facing strings, on-device folder names, and default identifiers changed
+  from "Bruce" to "Vigilance".
+- Input handling fixes for the T-Embed CC1101 Plus (latched back-button, encoder
+  navigation).
+
+Third-party components retain their own licenses and notices; see THIRD_PARTY.md
+and the individual library directories.
+
+Vigilance is an independent fork and is not endorsed by or affiliated with the
+upstream Bruce project or its maintainers.

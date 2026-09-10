@@ -1,0 +1,94 @@
+<!doctype html>
+<!-- GitHub Pages flasher for Vigilance. Enable Pages on the /docs folder.
+     Copy the built merged image to docs/firmware/vigilance-t-embed-cc1101.bin
+     (that is .pio/build/lilygo-t-embed-cc1101/firmware.factory.bin). -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vigilance Web Flasher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap">
+  <style>
+    :root{
+      --ground:#05080f; --panel:#0b111c; --line:#12283a;
+      --cyan:#2fb7ff; --cyan-hi:#8ae6ff; --text:#eaf2f8; --dim:#6c93a8;
+      --green:#35e08a; --amber:#ffb020;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh; color:var(--text);
+      font-family:"Rajdhani",system-ui,sans-serif;
+      background:
+        radial-gradient(1100px 520px at 50% -12%, #0b1424 0%, transparent 60%),
+        var(--ground);
+      display:flex; flex-direction:column; align-items:center; padding:48px 20px 64px;
+    }
+    .eye{width:18px;height:18px;border-radius:50%;border:2px solid var(--cyan);position:relative;
+      box-shadow:0 0 14px rgba(47,183,255,.6)}
+    .eye::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--cyan-hi);
+      box-shadow:0 0 8px var(--cyan)}
+    h1{font-size:40px;letter-spacing:.18em;text-transform:uppercase;margin:14px 0 4px;text-align:center}
+    .tag{font-family:"Share Tech Mono",monospace;color:var(--dim);font-size:14px;letter-spacing:.05em;
+      text-align:center;max-width:60ch;line-height:1.6}
+    .card{background:linear-gradient(180deg,rgba(18,40,58,.28),rgba(11,17,28,.55));
+      border:1px solid var(--line);border-radius:16px;padding:28px;margin-top:32px;max-width:560px;width:100%;
+      text-align:center}
+    esp-web-install-button{--esp-tools-button-color:#04121a;--esp-tools-button-text-color:#04121a;}
+    .btn{display:inline-block}
+    .flash-btn{
+      font-family:"Rajdhani";font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:17px;
+      background:linear-gradient(180deg,var(--cyan-hi),var(--cyan));color:#04121a;border:0;border-radius:10px;
+      padding:14px 26px;cursor:pointer;box-shadow:0 0 22px -6px var(--cyan)}
+    .steps{font-family:"Share Tech Mono",monospace;font-size:13px;color:var(--dim);text-align:left;
+      line-height:1.9;margin:22px auto 0;max-width:420px}
+    .steps b{color:var(--cyan-hi);font-weight:400}
+    .note{font-family:"Share Tech Mono",monospace;font-size:12px;color:var(--amber);margin-top:18px}
+    .unsupported{display:none;color:var(--amber);font-family:"Share Tech Mono",monospace;margin-top:12px}
+    a{color:var(--cyan)}
+    footer{font-family:"Share Tech Mono",monospace;font-size:12px;color:var(--dim);margin-top:36px;text-align:center;line-height:1.7}
+    .warn{font-family:"Share Tech Mono",monospace;font-size:12px;color:var(--dim);margin-top:26px;max-width:60ch;
+      text-align:center;line-height:1.6}
+  </style>
+</head>
+<body>
+  <div class="eye"></div>
+  <h1>Vigilance</h1>
+  <p class="tag">Defensive surveillance HUD firmware for the LilyGo T-Embed CC1101 Plus. Flash it right from this page.</p>
+
+  <div class="card">
+    <div class="steps">
+      <div>1. Plug the <b>T-Embed CC1101 Plus</b> in over USB-C.</div>
+      <div>2. Click <b>Flash Vigilance</b> below.</div>
+      <div>3. Pick the serial port and wait. Done.</div>
+    </div>
+
+    <p style="margin:24px 0 0">
+      <esp-web-install-button manifest="./manifest.json" class="btn">
+        <button slot="activate" class="flash-btn">Flash Vigilance</button>
+        <span slot="unsupported" class="unsupported" style="display:block">
+          Your browser can't flash. Use Chrome, Edge, Brave or Opera on desktop.
+        </span>
+        <span slot="not-allowed" class="unsupported" style="display:block">
+          This page must be served over HTTPS to flash.
+        </span>
+      </esp-web-install-button>
+    </p>
+
+    <p class="note">Web Serial works in Chrome / Edge / Brave / Opera on desktop only.</p>
+  </div>
+
+  <p class="warn">
+    Vigilance can transmit and probe radio and network protocols. Use it only on hardware,
+    networks and radios you own or are authorised to test. You are responsible for how you use it.
+  </p>
+
+  <footer>
+    Source and releases: <a href="https://github.com/Th3-Priest/vigilance">github.com/Th3-Priest/vigilance</a><br>
+    A fork of <a href="https://github.com/pr3y/Bruce">Bruce</a> (AGPL-3.0). Vigilance is AGPL-3.0.
+  </footer>
+
+  <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+</body>
+</html>

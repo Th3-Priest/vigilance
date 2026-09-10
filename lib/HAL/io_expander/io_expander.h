@@ -1,0 +1,179 @@
+#ifndef _IO_EXPANDER_H
+#define _IO_EXPANDER_H
+#include "pins_arduino.h"
+#include <Arduino.h>
+#include <Wire.h>
+
+#ifdef IO_EXPANDER_AW9523
+#include "Adafruit_AW9523.h"
+#define IO_EXP_CLASS Adafruit_AW9523
+#define IO_EXPANDER_ADDRESS AW9523_DEFAULT_ADDR // 0x58
+#elif defined(IO_EXPANDER_PCA9555)
+#include "PCA9555.h"
+#define IO_EXP_CLASS PCA9555
+#define IO_EXPANDER_ADDRESS PCA9555_DEFAULT_ADDR // 0x58
+#endif
+
+#ifndef IO_EXP_GPS // Used in Smoochiee and T-Lora
+#define IO_EXP_GPS -1
+#endif
+#ifndef IO_EXP_MIC // Used in Smoochiee
+#define IO_EXP_MIC -1
+#endif
+#ifndef IO_EXP_VIBRO // Used in Smoochiee
+#define IO_EXP_VIBRO -1
+#endif
+#ifndef IO_EXP_CC_RX // Used in Smoochiee
+#define IO_EXP_CC_RX -1
+#endif
+#ifndef IO_EXP_CC_TX // Used in Smoochiee
+#define IO_EXP_CC_TX -1
+#endif
+#ifndef IO_EXP_LOGO // Used in REAPER
+#define IO_EXP_LOGO -1
+#endif
+#ifndef IO_EXP_NRF // Used in C5
+#define IO_EXP_NRF -1
+#endif
+#ifndef IO_EXP_NFC // Used in T-LoraPager
+#define IO_EXP_NFC -1
+#endif
+
+// Button pins (likely inputs on the expander)
+#ifndef IO_EXP_UP
+#define IO_EXP_UP -1
+#endif
+#ifndef IO_EXP_DOWN
+#define IO_EXP_DOWN -1
+#endif
+#ifndef IO_EXP_ESC
+#define IO_EXP_ESC -1
+#endif
+#ifndef IO_EXP_LEFT
+#define IO_EXP_LEFT -1
+#endif
+#ifndef IO_EXP_RIGHT
+#define IO_EXP_RIGHT -1
+#endif
+#ifndef IO_EXP_SEL
+#define IO_EXP_SEL -1
+#endif
+
+#if defined(IO_EXPANDER_AW9523) || defined(IO_EXPANDER_PCA9555)
+
+class io_expander : public IO_EXP_CLASS {
+private:
+    bool _started = false;
+
+    void output(int8_t pin, bool val) {
+        if (pin < 0 || pin > 15) return;
+        IO_EXP_CLASS::pinMode(static_cast<uint8_t>(pin), OUTPUT);
+        IO_EXP_CLASS::digitalWrite(static_cast<uint8_t>(pin), val);
+    }
+
+    static void clearInterruptBit(uint16_t &mask, int8_t pin) {
+        if (pin >= 0 && pin <= 15) {
+            mask = static_cast<uint16_t>(mask & ~(static_cast<uint16_t>(1u) << static_cast<uint8_t>(pin)));
+        }
+    }
+
+    bool interruptEnableGPIOWrapper(uint16_t mask) {
+#if defined(IO_EXPANDER_AW9523)
+        return interruptEnableGPIO(mask);
+#else
+        (void)mask;
+        return true;
+#endif
+    }
+
+public:
+    io_expander() : IO_EXP_CLASS() {};
+
+    bool init(uint8_t a = IO_EXPANDER_ADDRESS, TwoWire *_w = &Wire) {
+        _started = begin(a, _w);
+        if (!_started) return false;
+
+        output(IO_EXP_GPS, LOW);   // SMOOOCHIE||REAPER
+        output(IO_EXP_MIC, LOW);   // SMOOCHIE
+        output(IO_EXP_VIBRO, LOW); // SMOOCHIE||REAPER
+        output(IO_EXP_CC_RX, LOW); // SMOOCHIE||REAPER
+        output(IO_EXP_CC_TX, LOW); // SMOOCHIE||REAPER
+        output(IO_EXP_LOGO, HIGH); // BRUCE LOGO LED ON REAPER
+        output(IO_EXP_NRF, HIGH);  // NRF ON BY DEFAULT FOR C5
+        output(IO_EXP_NFC, HIGH);  // ST25R NFC chip power on Lilygo T-LoraPager
+
+        // Set button pins as inputs
+        button(IO_EXP_UP);
+        button(IO_EXP_DOWN);
+        button(IO_EXP_ESC);
+        button(IO_EXP_LEFT);
+        button(IO_EXP_RIGHT);
+        button(IO_EXP_SEL);
+
+        // IMPORTANT: Disable all interrupts at startup
+        interruptEnableGPIOWrapper(0x0000);
+
+        return _started;
+    }
+
+    void turnPinOnOff(int8_t pin, bool val) {
+        if (!_started) return;
+        output(pin, val);
+    }
+
+    void setPinDirection(uint8_t pin, uint8_t mode) {
+        if (!_started || pin > 15) return;
+        pinMode(pin, mode);
+    }
+
+    bool readPin(int8_t pin) {
+        if (!_started || pin < 0 || pin > 15) return false;
+        return digitalRead(pin);
+    }
+
+    void button(int8_t pin) {
+        if (pin >= 0 && pin <= 15) { setPinDirection(pin, INPUT); }
+    }
+
+    bool enableGPIOInterrupts() {
+        if (!_started) return false;
+
+        // Start with ALL interrupts DISABLED (bits = 1 = disable)
+        uint16_t mask = 0xFFFF;
+
+        // Clear bits (set to 0 = enable) for the input/button pins
+        clearInterruptBit(mask, IO_EXP_UP);
+        clearInterruptBit(mask, IO_EXP_DOWN);
+        clearInterruptBit(mask, IO_EXP_ESC);
+        clearInterruptBit(mask, IO_EXP_LEFT);
+        clearInterruptBit(mask, IO_EXP_RIGHT);
+        clearInterruptBit(mask, IO_EXP_SEL);
+
+        return interruptEnableGPIOWrapper(mask);
+    }
+    // Optional: turn off all interrupts
+    void disableGPIOInterrupts() {
+        if (_started) interruptEnableGPIOWrapper(0x0000);
+    }
+};
+
+#else
+#define IO_EXPANDER_ADDRESS 0
+// dummy class
+class io_expander {
+private:
+    /* data */
+public:
+    io_expander() {};
+    ~io_expander() {};
+    void turnPinOnOff(int8_t pin, bool val) {};
+    bool init(uint8_t a, TwoWire *_w) { return false; };
+    void setPinDirection(uint8_t pin, uint8_t mode) {}
+    bool readPin(int8_t pin) { return false; }
+    void button(int8_t pin) {}
+    bool enableGPIOInterrupts() { return false; }
+    void disableGPIOInterrupts() {}
+};
+
+#endif // #ifdef IO_EXPANDER_AW9523
+#endif // _IO_EXPANDER_H

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Vigilance Companion</title>
+<style>
+  :root{
+    --bg:#060A12; --panel:#0E1622; --panel2:#13202F; --panel3:#182635;
+    --accent:#2FB7FF; --accent2:#00E6C8; --ok:#22E38C; --warn:#F0B24A; --bad:#FF5A6E;
+    --ink:#E4F0FB; --dim:#5C748C; --faint:#3C4E63;
+    --line:rgba(120,180,255,.12); --line2:rgba(120,180,255,.22);
+    --disp:'Chakra Petch',system-ui,sans-serif; --body:system-ui,-apple-system,sans-serif;
+    --mono:ui-monospace,'SFMono-Regular',Menlo,monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.45;
+    display:flex;flex-direction:column;overscroll-behavior:none}
+  .app-bar{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;border-bottom:1px solid var(--line);flex:none}
+  .brand{display:flex;flex-direction:column;line-height:1.05}
+  .brand .n{font-family:var(--disp);font-weight:700;font-size:16px;letter-spacing:.05em}
+  .brand .n .c{color:var(--accent)}
+  .brand .s{font-family:var(--mono);font-size:8.5px;letter-spacing:.24em;color:var(--faint);text-transform:uppercase}
+  .live{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;border:1px solid var(--line2);border-radius:20px;padding:5px 10px;color:var(--dim)}
+  .live .d{width:6px;height:6px;border-radius:50%;background:var(--faint)}
+  .live.up{color:var(--ok);border-color:rgba(34,227,140,.3)} .live.up .d{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+
+  .body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 16px}
+  .panel{display:none} .panel.on{display:block;animation:fade .18s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .ptitle{font-family:var(--disp);font-weight:700;font-size:18px;margin:2px 0 12px}
+  .crumb{font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:12px;word-break:break-all}
+  .crumb b{color:var(--accent)}
+  .muted{color:var(--dim);font-size:13px;text-align:center;padding:24px 8px}
+
+  .card{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px;margin-bottom:12px}
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .kv:last-child{border:0} .kv .k{color:var(--dim);font-family:var(--mono);font-size:11px;letter-spacing:.03em;text-transform:uppercase}
+  .kv .v{color:var(--ink);font-weight:600;text-align:right;word-break:break-all} .kv .v.a{color:var(--accent)}
+  .raw{font-family:var(--mono);font-size:11px;color:var(--accent2);background:#08111c;border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:8px;max-height:120px;overflow:auto;line-height:1.6;word-break:break-all;white-space:pre-wrap}
+  .actions{display:flex;gap:9px;margin-top:12px}
+  .actions button{flex:1;height:44px;border-radius:11px;border:1px solid var(--line2);background:var(--panel2);color:var(--ink);font-family:var(--disp);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer}
+  .actions button.primary{background:var(--accent);color:#04141f;border-color:var(--accent)}
+  .actions button:active{filter:brightness(1.15)} .actions button:disabled{opacity:.4}
+
+  .flist{display:flex;flex-direction:column;gap:6px}
+  .frow{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);cursor:pointer}
+  .frow:active{border-color:var(--accent)}
+  .frow .ic{width:20px;height:20px;flex:none;display:grid;place-items:center;color:var(--accent)}
+  .frow.dir .ic{color:var(--accent2)}
+  .frow .nm{font-size:14px;color:var(--ink);word-break:break-all} .frow .mt{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:1px}
+  .frow .sz{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--dim);flex:none}
+
+  /* ECRAN */
+  .mirror{display:flex;flex-direction:column;align-items:center}
+  .device{width:100%;padding:9px 10px 12px;border-radius:14px;background:linear-gradient(160deg,#222b35,#0e141b 60%);box-shadow:0 10px 28px -18px #000}
+  #mirror{width:100%;height:auto;display:block;image-rendering:pixelated;border-radius:5px;background:#000;aspect-ratio:320/170}
+  .wheel{position:relative;width:170px;height:170px;border-radius:50%;margin:18px auto 8px;background:radial-gradient(circle at 50% 44%,#16222f,#0b131c 70%);border:1px solid var(--line2);box-shadow:0 12px 30px -16px #000}
+  .wheel .seg{position:absolute;left:0;right:0;height:50%;display:flex;justify-content:center;color:var(--dim);cursor:pointer}
+  .wheel .seg.up{top:0;align-items:flex-start;padding-top:16px} .wheel .seg.down{bottom:0;align-items:flex-end;padding-bottom:16px}
+  .wheel .seg:active{color:var(--accent)} .wheel .seg svg{width:24px;height:24px}
+  .sel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:72px;height:72px;border-radius:50%;background:linear-gradient(180deg,#2FB7FF,#1c86c4);color:#04141f;border:none;font-family:var(--disp);font-weight:700;font-size:14px;box-shadow:0 7px 20px -7px var(--accent),inset 0 2px 5px rgba(255,255,255,.35);cursor:pointer}
+  .sel:active{transform:translate(-50%,-50%) scale(.95)}
+  .rrow{display:flex;gap:10px;width:100%;margin-top:6px}
+  .rrow button{flex:1;height:48px;border-radius:12px;background:var(--panel2);border:1px solid var(--line2);color:var(--ink);font-family:var(--disp);font-weight:600;font-size:13px;cursor:pointer}
+  .rrow button:active{border-color:var(--accent)}
+
+  /* signals */
+  .sig{display:flex;align-items:center;gap:11px;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);margin-bottom:8px;cursor:pointer}
+  .sig:active{border-color:var(--accent)}
+  .sig .ic{width:26px;height:26px;border-radius:8px;background:rgba(47,183,255,.1);display:grid;place-items:center;color:var(--accent);flex:none}
+  .sig .ic svg{width:15px;height:15px}
+  .sig .nm{font-weight:600;font-size:14px} .sig .mt{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:2px}
+  .sig .sz{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--accent2);flex:none}
+
+  /* transfer */
+  .drop{border:1.5px dashed var(--line2);border-radius:14px;padding:26px 16px;text-align:center;color:var(--dim);background:rgba(47,183,255,.03)}
+  .drop svg{width:34px;height:34px;color:var(--accent);margin-bottom:8px}
+  .drop b{color:var(--ink);font-family:var(--disp);display:block;font-size:15px;margin-bottom:3px}
+  .drop label{margin-top:12px;display:inline-block;background:var(--accent);color:#04141f;font-family:var(--disp);font-weight:600;font-size:13px;padding:10px 18px;border-radius:10px;cursor:pointer}
+  .dest{display:flex;align-items:center;gap:8px;margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--dim)} .dest b{color:var(--accent)}
+  .xfer{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--line);border-radius:11px;background:var(--panel);margin-top:10px;font-size:13px}
+  .xfer .bar{flex:1;height:5px;border-radius:3px;background:var(--panel3);overflow:hidden} .xfer .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+
+  .upbtn{width:100%;height:48px;border-radius:12px;background:linear-gradient(180deg,#2FB7FF,#1c86c4);color:#04141f;border:none;font-family:var(--disp);font-weight:700;font-size:15px;cursor:pointer}
+  .upbtn:active{filter:brightness(1.1)}
+  .upres{margin-top:12px;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .badge{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px}
+  .badge.new{background:rgba(34,227,140,.12);color:var(--ok);border:1px solid rgba(34,227,140,.3)}
+  .badge.ok{background:rgba(47,183,255,.1);color:var(--accent);border:1px solid var(--line2)}
+  .badge.err{background:rgba(255,90,110,.1);color:var(--bad);border:1px solid rgba(255,90,110,.3)}
+  a{color:var(--accent)}
+
+  .tabs{flex:none;display:flex;border-top:1px solid var(--line);background:var(--panel);padding:8px 4px calc(8px + env(safe-area-inset-bottom))}
+  .tab{flex:1;background:none;border:none;color:var(--faint);font-family:var(--body);font-size:9.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px}
+  .tab svg{width:21px;height:21px} .tab.on{color:var(--accent)} .tab.on svg{filter:drop-shadow(0 0 6px rgba(47,183,255,.5))}
+  .toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%) translateY(20px);background:var(--panel3);border:1px solid var(--line2);color:var(--ink);font-size:13px;padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none;z-index:50;max-width:88%;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+  <div class="app-bar">
+    <div class="brand"><span class="n"><span class="c">V</span>IGILANCE</span><span class="s">Companion</span></div>
+    <span class="live" id="live"><span class="d"></span><span id="liveTxt">connecting…</span></span>
+  </div>
+
+  <div class="body" id="scroller">
+
+    <section class="panel" data-p="ecran">
+      <div class="mirror">
+        <div class="device"><canvas id="mirror" width="320" height="170"></canvas></div>
+        <div class="wheel">
+          <div class="seg up" data-nav="prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></div>
+          <div class="seg down" data-nav="next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
+          <button class="sel" data-nav="sel">OK</button>
+        </div>
+        <div class="rrow"><button data-nav="esc">Back</button><button id="btnKb">Keyboard</button><button id="btnSync">Sync</button></div>
+      </div>
+    </section>
+
+    <section class="panel" data-p="fichiers">
+      <div class="crumb" id="crumb">SD /</div>
+      <div id="fileDetail"></div>
+      <div class="flist" id="flist"><div class="muted">Loading…</div></div>
+    </section>
+
+    <section class="panel" data-p="signaux">
+      <p class="ptitle">Recent captures</p>
+      <div id="sigList"><div class="muted">Loading…</div></div>
+    </section>
+
+    <section class="panel" data-p="transfert">
+      <p class="ptitle">Send to the T-Embed</p>
+      <div class="drop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        <b>Choose a file</b>.sub, .ir, .nfc, scripts, images…
+        <label>Browse<input type="file" id="upFile" hidden></label>
+      </div>
+      <div class="dest">Destination: <b id="destPath">/</b></div>
+      <div id="xferBox"></div>
+    </section>
+
+    <section class="panel" data-p="systeme">
+      <p class="ptitle">System</p>
+      <div class="card" id="sysCard"><div class="muted">Loading…</div></div>
+      <div class="card"><div class="ptitle" style="font-size:15px;margin:0 0 8px">Alerts &amp; detections<span id="evCount" class="muted" style="float:right;font-size:12px"></span></div><div id="evList"><div class="muted">No alerts.</div></div></div>
+      <div class="card">
+        <button class="upbtn" id="btnUpdate">Check for updates</button>
+        <div class="upres" id="upRes"></div>
+      </div>
+    </section>
+
+    <section class="panel" data-p="console">
+      <p class="ptitle">Ops console</p>
+      <div class="card">
+        <div class="ptitle" style="font-size:15px;margin:0 0 10px">Quick actions</div>
+        <div id="qActions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="muted">…</div></div>
+      </div>
+      <div class="card">
+        <div class="ptitle" style="font-size:15px;margin:0 0 8px">Custom command</div>
+        <div style="display:flex;gap:8px">
+          <input id="cmdInput" placeholder="e.g. rf scan · info · tone 3000 150" style="flex:1;min-width:0;padding:9px;border-radius:8px;border:1px solid #1c3a52;background:#0a141f;color:#cfe;font-size:14px">
+          <button id="cmdSend" class="primary" style="white-space:nowrap">Send</button>
+        </div>
+        <div class="muted" style="margin-top:8px;font-size:12px">Any Vigilance CLI command (info, free, rf scan, ir rx, rfid read, loader open &lt;app&gt;…). The result shows on the T-Embed screen (Screen tab).</div>
+      </div>
+      <div class="card">
+        <div class="ptitle" style="font-size:15px;margin:0 0 8px">Swarm</div>
+        <div id="swBox"><div class="muted">…</div></div>
+        <div class="muted" style="margin-top:8px;font-size:12px">Full swarm control on the device: <b>Standby → Swarm</b>. Satellite alerts arrive live above.</div>
+      </div>
+    </section>
+
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab on" data-t="ecran"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 20h8"/></svg>Screen</button>
+    <button class="tab" data-t="fichiers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Files</button>
+    <button class="tab" data-t="signaux"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12h3l2-6 3 12 2-8 2 4h4"/></svg>Signals</button>
+    <button class="tab" data-t="transfert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 20h16"/></svg>Transfer</button>
+    <button class="tab" data-t="systeme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 8.6 1.65 1.65 0 0 0 3.27 6.78l-.06-.06A2 2 0 1 1 6.04 3.9l.06.06A1.65 1.65 0 0 0 8 4.29h.09A1.65 1.65 0 0 0 9.6 2.78V2a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V8.6a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>System</button>
+    <button class="tab" data-t="console"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M13 15h4"/></svg>Console</button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+// ============ Vigilance Companion - drives the T-Embed WebUI ============
+const $ = s => document.querySelector(s);
+const FS = "SD";                       // target filesystem
+const RF_FOLDER = "/VigilanceRF";          // Vigilance capture folder
+const SUB_FOLDER = "/subghz";          // Flipper .sub files
+// TODO release: set the repo for update checks
+const GH_REPO = "";                    // e.g. "myaccount/Vigilance"
+const RUNNING_VERSION = "0.1";
+
+let toastT;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900); }
+
+// ---------- network ----------
+async function nav(dir){
+  try{
+    await fetch("/cm",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"cmnd="+encodeURIComponent("nav "+dir)});
+    setTimeout(reloadScreen, 130);
+  }catch(e){ toast("Command failed"); }
+}
+async function sendCmd(cmnd){
+  return fetch("/cm",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"cmnd="+encodeURIComponent(cmnd)});
+}
+
+// ---------- SCREEN: port of Bruce's screen decoder ----------
+const imageCache = {};
+let SCREEN_BUSY=false;
+async function reloadScreen(){
+  if(SCREEN_BUSY) return; SCREEN_BUSY=true;
+  try{
+    const r = await fetch("/getscreen");
+    const buf = new Uint8Array(await r.arrayBuffer());
+    await renderTFT($("#mirror"), buf);
+    setLive(true);
+  }catch(e){ setLive(false); }
+  finally{ SCREEN_BUSY=false; }
+}
+function color565(c){ const r=((c>>11&0x1f)*255)/31, g=((c>>5&0x3f)*255)/63, b=((c&0x1f)*255)/31; return `rgb(${r},${g},${b})`; }
+async function renderTFT(canvas, data){
+  const ctx = canvas.getContext("2d");
+  let p=0;
+  const rd = t => {
+    if(t==="int8") return data[p++];
+    if(t==="int16"){ const v=(data[p]<<8)|data[p+1]; p+=2; return v; }
+    if(t[0]==="s"){ const n=parseInt(t.slice(1)); const s=new TextDecoder().decode(data.slice(p,p+n)); p+=n; return s; }
+  };
+  const keys={0:["fg"],1:["x","y","w","h","fg"],2:["x","y","w","h","fg"],3:["x","y","w","h","r","fg"],4:["x","y","w","h","r","fg"],5:["x","y","r","fg"],6:["x","y","r","fg"],7:["x","y","x2","y2","x3","y3","fg"],8:["x","y","x2","y2","x3","y3","fg"],9:["x","y","rx","ry","fg"],10:["x","y","rx","ry","fg"],11:["x","y","x1","y1","fg"],12:["x","y","r","ir","startAngle","endAngle","fg","bg"],13:["x","y","bx","by","wd","fg","bg"],14:["x","y","size","fg","bg","txt"],15:["x","y","size","fg","bg","txt"],16:["x","y","size","fg","bg","txt"],17:["x","y","size","fg","bg","txt"],18:["x","y","center","ms","fs","file"],20:["x","y","h","fg"],21:["x","y","w","fg"],99:["w","h","rotation"]};
+  const obj=(fn,size)=>{ let r={},left=size-3; for(const k of keys[fn]){ if(k==="txt"||k==="file"){ r[k]=rd("s"+left);} else if(k==="rotation"||k==="fs"){ left-=1; r[k]=rd("int8"); if(k==="fs") r[k]=r[k]===0?"SD":"FS"; } else { left-=2; r[k]=rd("int16"); } } return r; };
+  const roundRect=(i,fill)=>{ const{x,y,w,h,r}=i; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); fill?ctx.fill():ctx.stroke(); };
+  const drawImg=async(i)=>{ let url=`/file?fs=${i.fs}&name=${encodeURIComponent(i.file)}&action=image`; let img=imageCache[url]; if(!img){ img=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=url;}).catch(()=>null); if(img)imageCache[url]=img; } if(img){ let dx=i.x,dy=i.y; if(i.center===1){dx+=(canvas.width-img.width)/2; dy+=(canvas.height-img.height)/2;} ctx.drawImage(img,dx,dy);} };
+
+  let off=0; ctx.clearRect(0,0,canvas.width,canvas.height);
+  while(off<data.length){
+    if(data[off]!==0xaa) break;
+    p=off+1; const size=rd("int8"), fn=rd("int8"); off+=size;
+    const i=obj(fn,size);
+    ctx.lineWidth=1; ctx.fillStyle="black"; ctx.strokeStyle="black"; ctx.beginPath();
+    switch(fn){
+      case 99: canvas.width=i.w; canvas.height=i.h;
+      case 0: ctx.fillStyle=color565(i.fg); ctx.fillRect(0,0,canvas.width,canvas.height); break;
+      case 1: ctx.strokeStyle=color565(i.fg); ctx.strokeRect(i.x,i.y,i.w,i.h); break;
+      case 2: ctx.fillStyle=color565(i.fg); ctx.fillRect(i.x,i.y,i.w,i.h); break;
+      case 3: ctx.strokeStyle=color565(i.fg); roundRect(i,false); break;
+      case 4: ctx.fillStyle=color565(i.fg); roundRect(i,true); break;
+      case 5: ctx.strokeStyle=color565(i.fg); ctx.arc(i.x,i.y,i.r,0,Math.PI*2); ctx.stroke(); break;
+      case 6: ctx.fillStyle=color565(i.fg); ctx.arc(i.x,i.y,i.r,0,Math.PI*2); ctx.fill(); break;
+      case 7: ctx.strokeStyle=color565(i.fg); ctx.moveTo(i.x,i.y); ctx.lineTo(i.x2,i.y2); ctx.lineTo(i.x3,i.y3); ctx.closePath(); ctx.stroke(); break;
+      case 8: ctx.fillStyle=color565(i.fg); ctx.moveTo(i.x,i.y); ctx.lineTo(i.x2,i.y2); ctx.lineTo(i.x3,i.y3); ctx.closePath(); ctx.fill(); break;
+      case 9: ctx.strokeStyle=color565(i.fg); ctx.ellipse(i.x,i.y,i.rx,i.ry,0,0,Math.PI*2); ctx.stroke(); break;
+      case 10: ctx.fillStyle=color565(i.fg); ctx.ellipse(i.x,i.y,i.rx,i.ry,0,0,Math.PI*2); ctx.fill(); break;
+      case 11: ctx.strokeStyle=color565(i.fg); ctx.moveTo(i.x,i.y); ctx.lineTo(i.x1,i.y1); ctx.stroke(); break;
+      case 12: { ctx.strokeStyle=color565(i.fg); ctx.lineWidth=(i.r-i.ir)||1; const sa=((i.startAngle+90||0)*Math.PI)/180, ea=((i.endAngle+90||0)*Math.PI)/180, rad=(i.r+i.ir)/2; ctx.arc(i.x,i.y,rad,sa,ea); ctx.stroke(); break; }
+      case 13: ctx.strokeStyle=color565(i.fg); ctx.lineWidth=i.wd||1; ctx.moveTo(i.x,i.y); ctx.lineTo(i.bx,i.by); ctx.stroke(); break;
+      case 14: case 15: case 16: case 17: {
+        if(i.bg===i.fg) i.bg=0;
+        i.txt=(i.txt||"").replaceAll("\\n","");
+        const fw=i.size===3?13.5:i.size===2?9:4.5; let o=0;
+        if(fn===15) o=i.txt.length*fw; if(fn===14) o=(i.txt.length*fw)/2;
+        ctx.fillStyle=color565(i.bg); ctx.fillRect(i.x-o,i.y,i.txt.length*fw,i.size*8);
+        ctx.fillStyle=color565(i.fg); ctx.font=`${i.size*8}px monospace`; ctx.textBaseline="top";
+        ctx.textAlign=fn===14?"center":fn===15?"right":"left"; ctx.fillText(i.txt,i.x,i.y); break;
+      }
+      case 18: await drawImg(i); break;
+      case 19: ctx.fillStyle=color565(i.fg); ctx.fillRect(i.x,i.y,1,1); break;
+      case 20: ctx.fillStyle=color565(i.fg); ctx.fillRect(i.x,i.y,1,i.h); break;
+      case 21: ctx.fillStyle=color565(i.fg); ctx.fillRect(i.x,i.y,i.w,1); break;
+    }
+  }
+}
+function setLive(up){ const l=$("#live"); l.classList.toggle("up",up); $("#liveTxt").textContent = up?"T-Embed · online":"offline"; }
+
+// auto-refresh the screen while the Screen tab is active
+let SCREEN_TIMER=null;
+function startScreen(){ stopScreen(); reloadScreen(); SCREEN_TIMER=setInterval(reloadScreen,1200); }
+function stopScreen(){ if(SCREEN_TIMER){clearInterval(SCREEN_TIMER); SCREEN_TIMER=null;} }
+
+// ---------- FILES ----------
+let curFolder = SUB_FOLDER;
+async function listFiles(folder){
+  curFolder=folder; $("#destPath").textContent=folder; $("#crumb").innerHTML="SD "+folder.split("/").map(s=>s?" / <b>"+s+"</b>":"").join("");
+  $("#fileDetail").innerHTML=""; $("#flist").innerHTML='<div class="muted">Loading…</div>';
+  try{
+    const r=await fetch(`/listfiles?fs=${FS}&folder=${encodeURIComponent(folder)}`);
+    const txt=await r.text();
+    renderFileList(txt, folder);
+  }catch(e){ $("#flist").innerHTML='<div class="muted">Could not list files.</div>'; }
+}
+const ICON_FOLDER='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+const ICON_WAVE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12h3l2-6 3 12 2-8 2 4h4"/></svg>';
+const ICON_FILE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';
+function renderFileList(txt, folder){
+  const lines=txt.split("\n").filter(Boolean);
+  let html="";
+  if(folder && folder!=="/"){ const up=folder.substring(0,folder.lastIndexOf("/"))||"/"; html+=rowHTML("dir","..","parent folder","",ICON_FOLDER,`nav-dir:${up}`); }
+  const dirs=[],files=[];
+  for(const line of lines){ const [type,name,size]=line.split(":"); if(type==="Fo") dirs.push(name); else if(type==="Fi") files.push([name,size]); }
+  dirs.sort(); files.sort((a,b)=>a[0].localeCompare(b[0]));
+  for(const d of dirs) html+=rowHTML("dir",d,"folder","",ICON_FOLDER,`nav-dir:${folder==="/"?"":folder}/${d}`);
+  for(const [n,s] of files){ const isSub=n.toLowerCase().endsWith(".sub"); html+=rowHTML("",n, isSub?"Sub-GHz":n.split(".").pop(), s, isSub?ICON_WAVE:ICON_FILE, `open:${folder==="/"?"":folder}/${n}`); }
+  if(!html) html='<div class="muted">Empty folder.</div>';
+  $("#flist").innerHTML=html;
+  $("#flist").querySelectorAll("[data-act]").forEach(el=>el.addEventListener("click",()=>{
+    const [act,arg]=el.dataset.act.split("|");
+    if(act==="nav-dir") listFiles(arg);
+    else if(act==="open") openFile(arg);
+  }));
+}
+function rowHTML(cls,name,meta,size,icon,act){ const [a,arg]=act.split(":"); return `<div class="frow ${cls}" data-act="${a}|${arg}"><span class="ic">${icon}</span><div><div class="nm">${name}</div><div class="mt">${meta}</div></div><span class="sz">${size||""}</span></div>`; }
+
+async function readFile(path){
+  const r=await fetch(`/file?fs=${FS}&name=${encodeURIComponent(path)}&action=download`);
+  return r.text();
+}
+const TEXT_EXT=["sub","ir","txt","json","csv","nfc","js","bjs","md","conf","cfg","ini","log","xml","yaml","yml"];
+async function openFile(path){
+  const name=path.split("/").pop(), ext=(name.split(".").pop()||"").toLowerCase();
+  try{
+    if(ext==="sub"){
+      const content=await readFile(path); const f=parseSub(content);
+      let kv=`<div class="kv"><span class="k">File</span><span class="v">${name}</span></div>`;
+      if(f.Frequency) kv+=`<div class="kv"><span class="k">Frequency</span><span class="v a">${(f.Frequency/1e6).toFixed(2)} MHz</span></div>`;
+      if(f.Protocol) kv+=`<div class="kv"><span class="k">Protocol</span><span class="v">${f.Protocol}</span></div>`;
+      if(f.Preset) kv+=`<div class="kv"><span class="k">Preset</span><span class="v">${f.Preset.replace("FuriHalSubGhzPreset","")}</span></div>`;
+      if(f.Bit) kv+=`<div class="kv"><span class="k">Bits</span><span class="v">${f.Bit}</span></div>`;
+      if(f.Key) kv+=`<div class="kv"><span class="k">Key</span><span class="v">${f.Key}</span></div>`;
+      $("#fileDetail").innerHTML=`<div class="card">${kv}<div class="raw">${escapeHtml(content).slice(0,900)}</div><div class="actions"><button class="primary" id="btnReplay">▶ Replay</button><button id="btnEdit">✎ Edit</button><button id="btnDl">Download</button></div></div>`;
+      $("#btnReplay").addEventListener("click",()=>replaySub(path));
+      $("#btnEdit").addEventListener("click",()=>editFile(path,content));
+      $("#btnDl").addEventListener("click",()=>window.open(`/file?fs=${FS}&name=${encodeURIComponent(path)}&action=download`,"_blank"));
+    } else if(TEXT_EXT.includes(ext)){
+      const content=await readFile(path); editFile(path,content);
+    } else {
+      $("#fileDetail").innerHTML=`<div class="card"><div class="kv"><span class="k">File</span><span class="v">${name}</span></div><div class="muted">Text preview not available for .${ext}.</div><div class="actions"><button class="primary" id="btnDl">Download</button></div></div>`;
+      $("#btnDl").addEventListener("click",()=>window.open(`/file?fs=${FS}&name=${encodeURIComponent(path)}&action=download`,"_blank"));
+    }
+    $("#scroller").scrollTop=0;
+  }catch(e){ toast("Could not read file"); }
+}
+// #38 Built-in editor: edit a text file (.sub/.ir/scripts…) and save it via /edit.
+function editFile(path,content){
+  const name=path.split("/").pop();
+  $("#fileDetail").innerHTML=`<div class="card">
+    <div class="kv"><span class="k">✎ Edit</span><span class="v">${name}</span></div>
+    <textarea id="edArea" spellcheck="false" style="width:100%;box-sizing:border-box;min-height:240px;margin:6px 0;padding:9px;border-radius:8px;border:1px solid #1c3a52;background:#0a141f;color:#cfe;font:12px/1.45 ui-monospace,Menlo,monospace;resize:vertical"></textarea>
+    <div class="actions"><button class="primary" id="edSave">💾 Save</button><button id="edReload">Cancel</button></div>
+    <div class="muted" id="edMsg" style="margin-top:6px;font-size:12px"></div></div>`;
+  $("#edArea").value=content;
+  $("#edReload").addEventListener("click",()=>openFile(path));
+  $("#edSave").addEventListener("click",async()=>{
+    const body="name="+encodeURIComponent(path)+"&content="+encodeURIComponent($("#edArea").value)+"&fs="+FS;
+    $("#edMsg").textContent="Saving…";
+    try{
+      const r=await fetch("/edit",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body});
+      const t=await r.text(); $("#edMsg").textContent=(r.ok?"✓ ":"✗ ")+t;
+      if(r.ok) toast("File saved");
+    }catch(e){ $("#edMsg").textContent="✗ Network error"; }
+  });
+  $("#scroller").scrollTop=0;
+}
+function parseSub(txt){ const o={}; txt.split("\n").forEach(l=>{ const i=l.indexOf(":"); if(i>0){ o[l.slice(0,i).trim()]=l.slice(i+1).trim(); } }); return o; }
+function escapeHtml(s){ return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+async function replaySub(path){ try{ await sendCmd("subghz tx_from_file "+path); toast("Replay sent to T-Embed"); }catch(e){ toast("Replay failed"); } }
+
+// ---------- SIGNALS (captures from the RF folder) ----------
+async function loadSignals(){
+  const box=$("#sigList"); box.innerHTML='<div class="muted">Loading…</div>';
+  try{
+    const r=await fetch(`/listfiles?fs=${FS}&folder=${encodeURIComponent(RF_FOLDER)}`);
+    const lines=(await r.text()).split("\n").filter(Boolean);
+    const files=lines.map(l=>l.split(":")).filter(a=>a[0]==="Fi").map(a=>[a[1],a[2]]);
+    if(!files.length){ box.innerHTML='<div class="muted">No captures in '+RF_FOLDER+'.<br>Run a Scan/copy on the T-Embed.</div>'; return; }
+    box.innerHTML=files.map(([n,s])=>`<div class="sig" data-f="${RF_FOLDER}/${n}"><span class="ic">${ICON_WAVE}</span><div><div class="nm">${n}</div><div class="mt">Sub-GHz · tap for details</div></div><span class="sz">${s}</span></div>`).join("");
+    box.querySelectorAll(".sig").forEach(el=>el.addEventListener("click",()=>{ switchTab("fichiers"); openFile(el.dataset.f); }));
+  }catch(e){ box.innerHTML='<div class="muted">Capture folder not found.</div>'; }
+}
+
+// ---------- TRANSFER ----------
+$("#upFile").addEventListener("change",async e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const box=$("#xferBox"); box.innerHTML=`<div class="xfer"><span>${file.name}</span><span class="bar"><i id="upbar"></i></span><span id="uppc" style="font-family:var(--mono);font-size:10px;color:var(--accent)">0%</span></div>`;
+  const fd=new FormData(); fd.append("data",file,file.name);
+  const xhr=new XMLHttpRequest();
+  xhr.upload.onprogress=ev=>{ if(ev.lengthComputable){ const pc=Math.round(ev.loaded/ev.total*100); $("#upbar").style.width=pc+"%"; $("#uppc").textContent=pc+"%"; } };
+  xhr.onload=()=>{ toast(xhr.status<300?"Sent to "+curFolder:"Upload failed"); if(curFolder) listFiles(curFolder); };
+  xhr.onerror=()=>toast("Upload failed");
+  try{ await fetch(`/listfiles?fs=${FS}&folder=${encodeURIComponent(curFolder||"/")}`); }catch(_){}
+  xhr.open("POST","/upload"); xhr.send(fd);
+  e.target.value="";
+});
+
+// ---------- SYSTEM ----------
+async function loadSystem(){
+  const card=$("#sysCard");
+  try{
+    const r=await fetch("/systeminfo"); const t=await r.text(); let info; try{info=JSON.parse(t);}catch(_){info=null;}
+    let kv=`<div class="kv"><span class="k">Firmware</span><span class="v a">Vigilance ${RUNNING_VERSION}</span></div>`;
+    kv+=`<div class="kv"><span class="k">Device</span><span class="v">T-Embed CC1101</span></div>`;
+    if(info){ for(const [k,v] of Object.entries(info)){ kv+=`<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`; } }
+    card.innerHTML=kv;
+  }catch(e){ card.innerHTML=`<div class="kv"><span class="k">Firmware</span><span class="v a">Vigilance ${RUNNING_VERSION}</span></div><div class="kv"><span class="k">Device</span><span class="v">T-Embed CC1101</span></div>`; }
+  loadEvents();
+}
+function evAge(sec){ if(sec<0)sec=0; if(sec<60)return sec+"s"; if(sec<3600)return Math.floor(sec/60)+"m"; return Math.floor(sec/3600)+"h"; }
+function evStyle(type){
+  if(type==='DEAUTH'||type==='TRACKER') return 'background:#5a1414;color:#ff8a8a';   // red
+  if(type==='TARGET'||type==='SSIDDUP'||type==='RECURRING') return 'background:#5a3a00;color:#ffce80'; // amber
+  return 'background:#0d3a4a;color:#7fdfff'; // cyan
+}
+async function loadEvents(){
+  const box=$("#evList"); if(!box) return;
+  try{
+    const r=await fetch("/events"); const ev=await r.json();
+    const cnt=$("#evCount"); if(cnt) cnt.textContent=(ev&&ev.length)?(ev.length+" evt"):"";
+    if(!ev || !ev.length){ box.innerHTML='<div class="muted">No alerts. Start Standby Mode (WiFi or BLE).</div>'; return; }
+    const now=ev[0].t||0;
+    box.innerHTML=ev.slice(0,30).map(e=>{
+      const age=evAge(now-(e.t||0));
+      return `<div class="kv"><span class="k"><span class="badge" style="${evStyle(e.type)}">${e.type}</span></span><span class="v" style="font-weight:400">${e.msg} <span class="muted" style="font-size:11px">· ${age}</span></span></div>`;
+    }).join("");
+  }catch(e){ box.innerHTML='<div class="muted">Log unavailable.</div>'; }
+}
+
+// ---------- OPS CONSOLE (#35) + swarm view (#39) ----------
+const QACTIONS=[
+  {l:"Device info",c:"info"},
+  {l:"Free RAM",c:"free"},
+  {l:"RF scan",c:"rf scan"},
+  {l:"IR - listen",c:"ir rx"},
+  {l:"Read RFID/NFC",c:"rfid read"},
+  {l:"Test beep",c:"tone 3000 150"},
+  {l:"Uptime",c:"uptime"},
+  {l:"Open WebUI",c:"webui"},
+  {l:"Reboot",c:"reboot",danger:1},
+];
+function renderConsole(){
+  const g=$("#qActions");
+  if(g && !g.dataset.done){
+    g.dataset.done="1";
+    g.innerHTML=QACTIONS.map((a,i)=>`<button class="qb" data-i="${i}" style="padding:11px 8px;border-radius:9px;border:1px solid ${a.danger?'#5a1e1e':'#1c4a63'};background:${a.danger?'#2a1414':'#0e2432'};color:${a.danger?'#ff9a9a':'#bfe8ff'};font-size:13px;font-weight:600;cursor:pointer">${a.l}</button>`).join("");
+    g.querySelectorAll(".qb").forEach(b=>b.addEventListener("click",()=>runQ(QACTIONS[+b.dataset.i])));
+  }
+  loadSwarm();
+}
+async function runQ(a){
+  if(a.danger && !confirm(a.l+" - confirm?")) return;
+  try{ await sendCmd(a.c); toast("↦ "+a.c); setTimeout(reloadScreen,150); }catch(e){ toast("Failed"); }
+}
+async function loadSwarm(){
+  const box=$("#swBox"); if(!box) return;
+  try{
+    const r=await fetch("/events"); const ev=await r.json();
+    const sw=(ev||[]).filter(e=> e.type==="SWARM" || e.type==="TRACKER" || (e.msg&&e.msg.indexOf("sat")>=0));
+    if(!sw.length){ box.innerHTML='<div class="muted">No swarm events. Open Standby → Swarm on the T-Embed.</div>'; return; }
+    const now=sw[0].t||0;
+    box.innerHTML=sw.slice(0,10).map(e=>`<div class="kv"><span class="k"><span class="badge" style="${evStyle(e.type)}">${e.type}</span></span><span class="v" style="font-weight:400">${e.msg} <span class="muted" style="font-size:11px">· ${evAge(now-(e.t||0))}</span></span></div>`).join("");
+  }catch(e){ box.innerHTML='<div class="muted">Unavailable.</div>'; }
+}
+$("#cmdSend").addEventListener("click",async()=>{ const v=$("#cmdInput").value.trim(); if(!v) return; try{ await sendCmd(v); toast("↦ "+v); $("#cmdInput").value=""; setTimeout(reloadScreen,150); }catch(e){ toast("Failed"); } });
+$("#cmdInput").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#cmdSend").click(); });
+$("#btnUpdate").addEventListener("click",async ()=>{
+  const res=$("#upRes"); res.innerHTML='Checking…';
+  if(!GH_REPO){ res.innerHTML='<span class="badge ok">INFO</span> Repo not configured yet. Set it before release.'; return; }
+  try{
+    const r=await fetch(`https://api.github.com/repos/${GH_REPO}/releases/latest`);
+    if(!r.ok) throw 0; const j=await r.json();
+    const latest=(j.tag_name||"").replace(/^v/,"");
+    if(latest && latest!==RUNNING_VERSION) res.innerHTML=`<span class="badge new">NEW</span> Vigilance ${latest} available - <a href="${j.html_url}" target="_blank">view</a>`;
+    else res.innerHTML='<span class="badge ok">UP TO DATE</span> You have the latest version.';
+  }catch(e){ res.innerHTML='<span class="badge err">OFFLINE</span> Check failed (no internet or private repo).'; }
+});
+
+// ---------- tab navigation ----------
+function switchTab(name){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.t===name));
+  document.querySelectorAll(".panel").forEach(pl=>pl.classList.toggle("on",pl.dataset.p===name));
+  $("#scroller").scrollTop=0;
+  if(name==="ecran") startScreen(); else stopScreen();
+  if(name==="fichiers") listFiles(curFolder);
+  if(name==="signaux") loadSignals();
+  if(name==="systeme") loadSystem();
+  if(name==="console") renderConsole();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>switchTab(t.dataset.t)));
+document.querySelectorAll("[data-nav]").forEach(el=>el.addEventListener("click",()=>nav(el.dataset.nav)));
+$("#btnSync").addEventListener("click",reloadScreen);
+$("#btnKb").addEventListener("click",async ()=>{ const s=prompt("Text to type on the T-Embed:"); if(s){ await sendCmd("keyboard "+s); toast("Sent"); } });
+// Live alert feed: refresh the log every 5s while the System tab is open.
+setInterval(()=>{
+  const sp=document.querySelector('.panel[data-p="systeme"]'); if(sp && sp.classList.contains("on")) loadEvents();
+  const cp=document.querySelector('.panel[data-p="console"]'); if(cp && cp.classList.contains("on")) loadSwarm();
+}, 5000);
+
+// start on the Screen tab
+startScreen();
+</script>
+</body>
+</html>
