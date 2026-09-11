@@ -1,87 +1,191 @@
 <!doctype html>
-<!-- GitHub Pages flasher for Vigilance. Enable Pages on the /docs folder.
+<!-- GitHub Pages landing + flasher for Vigilance. Enable Pages on the /docs folder.
      Copy the built merged image to docs/firmware/vigilance-t-embed-cc1101.bin
      (that is .pio/build/lilygo-t-embed-cc1101/firmware.factory.bin). -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vigilance Web Flasher</title>
+  <title>Vigilance</title>
+  <meta name="description" content="Defensive surveillance HUD firmware for the LilyGo T-Embed CC1101 Plus. A Bruce fork.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap">
   <style>
     :root{
       --ground:#05080f; --panel:#0b111c; --line:#12283a;
       --cyan:#2fb7ff; --cyan-hi:#8ae6ff; --text:#eaf2f8; --dim:#6c93a8;
-      --green:#35e08a; --amber:#ffb020;
+      --green:#35e08a; --amber:#ffb020; --red:#ff4d4d;
+      --mono:"Share Tech Mono",ui-monospace,monospace;
+      --disp:"Rajdhani",system-ui,sans-serif;
     }
     *{box-sizing:border-box}
+    html,body{margin:0}
     body{
-      margin:0; min-height:100vh; color:var(--text);
-      font-family:"Rajdhani",system-ui,sans-serif;
+      color:var(--text); font-family:var(--disp); line-height:1.5;
       background:
         radial-gradient(1100px 520px at 50% -12%, #0b1424 0%, transparent 60%),
+        radial-gradient(900px 500px at 90% 8%, #0a1a24 0%, transparent 55%),
         var(--ground);
-      display:flex; flex-direction:column; align-items:center; padding:48px 20px 64px;
+      -webkit-font-smoothing:antialiased;
     }
+    .wrap{max-width:960px; margin:0 auto; padding:48px 22px 72px}
+    a{color:var(--cyan)}
+    /* hero */
+    .brand{display:flex; align-items:center; gap:12px; justify-content:center}
     .eye{width:18px;height:18px;border-radius:50%;border:2px solid var(--cyan);position:relative;
       box-shadow:0 0 14px rgba(47,183,255,.6)}
-    .eye::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--cyan-hi);
-      box-shadow:0 0 8px var(--cyan)}
-    h1{font-size:40px;letter-spacing:.18em;text-transform:uppercase;margin:14px 0 4px;text-align:center}
-    .tag{font-family:"Share Tech Mono",monospace;color:var(--dim);font-size:14px;letter-spacing:.05em;
-      text-align:center;max-width:60ch;line-height:1.6}
-    .card{background:linear-gradient(180deg,rgba(18,40,58,.28),rgba(11,17,28,.55));
-      border:1px solid var(--line);border-radius:16px;padding:28px;margin-top:32px;max-width:560px;width:100%;
-      text-align:center}
-    esp-web-install-button{--esp-tools-button-color:#04121a;--esp-tools-button-text-color:#04121a;}
-    .btn{display:inline-block}
-    .flash-btn{
-      font-family:"Rajdhani";font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:17px;
+    .eye::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--cyan-hi);box-shadow:0 0 8px var(--cyan)}
+    h1{font-size:46px;letter-spacing:.2em;text-transform:uppercase;margin:12px 0 6px;text-align:center}
+    .tag{font-family:var(--mono);color:var(--dim);font-size:15px;letter-spacing:.04em;text-align:center;max-width:60ch;margin:0 auto}
+    .tag b{color:var(--cyan-hi);font-weight:400}
+    .shot{display:block;width:100%;max-width:680px;margin:30px auto 0;border-radius:12px;border:1px solid var(--line);
+      box-shadow:0 24px 60px -24px rgba(0,0,0,.8), 0 0 30px -12px rgba(47,183,255,.3)}
+    /* flasher */
+    .flash{background:linear-gradient(180deg,rgba(18,40,58,.30),rgba(11,17,28,.55));border:1px solid var(--line);
+      border-radius:16px;padding:26px;margin:34px auto 0;max-width:560px;text-align:center}
+    .steps{font-family:var(--mono);font-size:13px;color:var(--dim);text-align:left;line-height:1.9;margin:0 auto 20px;max-width:420px}
+    .steps b{color:var(--cyan-hi);font-weight:400}
+    .flash-btn{font-family:var(--disp);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:17px;
       background:linear-gradient(180deg,var(--cyan-hi),var(--cyan));color:#04121a;border:0;border-radius:10px;
       padding:14px 26px;cursor:pointer;box-shadow:0 0 22px -6px var(--cyan)}
-    .steps{font-family:"Share Tech Mono",monospace;font-size:13px;color:var(--dim);text-align:left;
-      line-height:1.9;margin:22px auto 0;max-width:420px}
-    .steps b{color:var(--cyan-hi);font-weight:400}
-    .note{font-family:"Share Tech Mono",monospace;font-size:12px;color:var(--amber);margin-top:18px}
-    .unsupported{display:none;color:var(--amber);font-family:"Share Tech Mono",monospace;margin-top:12px}
-    a{color:var(--cyan)}
-    footer{font-family:"Share Tech Mono",monospace;font-size:12px;color:var(--dim);margin-top:36px;text-align:center;line-height:1.7}
-    .warn{font-family:"Share Tech Mono",monospace;font-size:12px;color:var(--dim);margin-top:26px;max-width:60ch;
-      text-align:center;line-height:1.6}
+    .note{font-family:var(--mono);font-size:12px;color:var(--amber);margin:16px 0 0}
+    .unsupported{display:block;color:var(--amber);font-family:var(--mono);margin-top:10px}
+    /* sections */
+    section{margin-top:56px}
+    h2{font-family:var(--mono);font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);
+      margin:0 0 20px;display:flex;align-items:center;gap:10px}
+    h2::before{content:"";width:7px;height:7px;border-radius:1px;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+    .diff{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    @media(max-width:680px){.diff{grid-template-columns:1fr}}
+    .card{background:linear-gradient(180deg,rgba(18,40,58,.22),rgba(11,17,28,.4));border:1px solid var(--line);
+      border-radius:14px;padding:18px 18px 19px}
+    .card h3{margin:0 0 6px;font-size:19px;font-weight:600;letter-spacing:.01em}
+    .card p{margin:0;color:#c6dae6;font-size:15px}
+    .card .k{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan-hi);display:block;margin-bottom:8px}
+    .lineage{font-size:16px;color:#c6dae6;max-width:70ch}
+    .lineage b{color:var(--text)}
+    /* feature columns */
+    .feats{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+    @media(max-width:680px){.feats{grid-template-columns:1fr}}
+    .feats h3{font-family:var(--disp);font-size:17px;font-weight:700;color:var(--cyan-hi);margin:0 0 12px;
+      letter-spacing:.02em;border-bottom:1px solid var(--line);padding-bottom:8px}
+    ul{list-style:none;margin:0;padding:0}
+    li{font-size:14.5px;color:#cde0ec;padding:5px 0 5px 18px;position:relative;line-height:1.45}
+    li::before{content:"";position:absolute;left:0;top:11px;width:6px;height:6px;border-radius:50%;
+      background:var(--cyan);box-shadow:0 0 7px var(--cyan)}
+    li.def::before{background:var(--green);box-shadow:0 0 7px var(--green)}
+    li span{color:var(--dim);font-size:13px}
+    footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--line);font-family:var(--mono);
+      font-size:12px;color:var(--dim);text-align:center;line-height:1.8}
+    .warn{font-family:var(--mono);font-size:12px;color:var(--dim);max-width:64ch;margin:22px auto 0;text-align:center;line-height:1.6}
   </style>
 </head>
 <body>
-  <div class="eye"></div>
-  <h1>Vigilance</h1>
-  <p class="tag">Defensive surveillance HUD firmware for the LilyGo T-Embed CC1101 Plus. Flash it right from this page.</p>
+<div class="wrap">
 
-  <div class="card">
+  <div class="brand"><span class="eye"></span></div>
+  <h1>Vigilance</h1>
+  <p class="tag">A <b>defensive surveillance HUD</b> firmware for the LilyGo T-Embed CC1101 Plus. Spot hidden cameras, catch trackers tailing you, and watch the RF around you, on a pocket device.</p>
+
+  <img class="shot" src="media/hero.gif" alt="Vigilance Sentinel HUD in action">
+
+  <!-- flasher -->
+  <div class="flash">
     <div class="steps">
       <div>1. Plug the <b>T-Embed CC1101 Plus</b> in over USB-C.</div>
       <div>2. Click <b>Flash Vigilance</b> below.</div>
       <div>3. Pick the serial port and wait. Done.</div>
     </div>
-
-    <p style="margin:24px 0 0">
-      <esp-web-install-button manifest="./manifest.json" class="btn">
-        <button slot="activate" class="flash-btn">Flash Vigilance</button>
-        <span slot="unsupported" class="unsupported" style="display:block">
-          Your browser can't flash. Use Chrome, Edge, Brave or Opera on desktop.
-        </span>
-        <span slot="not-allowed" class="unsupported" style="display:block">
-          This page must be served over HTTPS to flash.
-        </span>
-      </esp-web-install-button>
-    </p>
-
+    <esp-web-install-button manifest="./manifest.json">
+      <button slot="activate" class="flash-btn">Flash Vigilance</button>
+      <span slot="unsupported" class="unsupported">Your browser can't flash. Use Chrome, Edge, Brave or Opera on desktop.</span>
+      <span slot="not-allowed" class="unsupported">This page must be served over HTTPS to flash.</span>
+    </esp-web-install-button>
     <p class="note">Web Serial works in Chrome / Edge / Brave / Opera on desktop only.</p>
   </div>
 
+  <!-- differentiators -->
+  <section>
+    <h2>What sets Vigilance apart</h2>
+    <div class="diff">
+      <div class="card">
+        <span class="k">Interface</span>
+        <h3>Sentinel HUD</h3>
+        <p>A real framebuffer interface with anti-aliased graphics: a live-radar home screen, restyled menus, a lock-on boot, and a standby scene. Not a debug console.</p>
+      </div>
+      <div class="card">
+        <span class="k">Stance</span>
+        <h3>Defensive first</h3>
+        <p>It leads with finding surveillance: hidden cameras, trackers following you, tails across RF zones, deauth attacks. Protection, not just probing.</p>
+      </div>
+      <div class="card">
+        <span class="k">Feel</span>
+        <h3>A living device</h3>
+        <p>A sentinel eye that reacts to the threat level, an ambient LED pulse, and a screensaver, all retintable through built-in themes. It reads like a product.</p>
+      </div>
+      <div class="card">
+        <span class="k">Power</span>
+        <h3>Same toolkit underneath</h3>
+        <p>Every RF, wireless and hardware tool from Bruce and the Sor3nt merge is still here. Vigilance changes the experience, not the capability.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- lineage -->
+  <section>
+    <h2>Lineage</h2>
+    <p class="lineage">
+      Vigilance is a fork of <a href="https://github.com/pr3y/Bruce">Bruce</a> (AGPL-3.0) by pr3y and its
+      contributors, which provides the core wireless and RF toolbox. It also carries a merge of work from
+      <b>Sor3nt</b>, adding extra Sub-GHz / Flipper-style protocol support. On top of that base, Vigilance
+      adds its own Sentinel HUD and a defensive-surveillance feature suite, and rethemes the whole device.
+      If Vigilance is useful to you, please star and support the upstream Bruce project too.
+    </p>
+  </section>
+
+  <!-- features -->
+  <section>
+    <h2>Features available now</h2>
+    <div class="feats">
+      <div>
+        <h3>Defensive watch (Vigilance)</h3>
+        <ul>
+          <li class="def">Bug Sweep <span>hidden WiFi camera / recorder finder</span></li>
+          <li class="def">BLE Watch <span>AirTag / SmartTag / Tile / Chipolo anti-tracker</span></li>
+          <li class="def">Tail Watch <span>flags a device following you across RF zones</span></li>
+          <li class="def">WiFi Watch Mode <span>deauth-attack detection, device tracking, evil-twin</span></li>
+          <li class="def">Sub-GHz Census <span>passive 433 / 315 / 868 device catalog</span></li>
+          <li class="def">WiFi Map <span>live map of nearby access points</span></li>
+          <li class="def">Hunt Mode <span>hot / cold RF direction finder</span></li>
+          <li class="def">Journal <span>on-device timeline of every alert</span></li>
+          <li class="def">Guardian Eye + Sentinel Pulse <span>ambient threat on screen and LED</span></li>
+          <li class="def">Standby <span>the sentinel screensaver scene</span></li>
+          <li class="def">Swarm <span>link several units over ESP-NOW</span></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Full wireless toolkit</h3>
+        <ul>
+          <li>Sub-GHz (CC1101) <span>scan, record, replay, bruteforce, jammer, spectrum</span></li>
+          <li>Sub-GHz decoders <span>Came, Faac, Hormann, Somfy, weather sensors</span></li>
+          <li>WiFi <span>scan, deauth, evil portal, beacon spam, sniffer, wardriving + KML</span></li>
+          <li>Bluetooth LE <span>scan, spam, HID</span></li>
+          <li>2.4 GHz NRF24 <span>scanner, jammer, mousejack, spectrum</span></li>
+          <li>Infrared <span>read, replay, TV-B-Gone, IR Ghost</span></li>
+          <li>NFC / RFID <span>read, emulate, write, Chameleon, amiibo</span></li>
+          <li>GPS <span>tracker, wardriving</span></li>
+          <li>LoRa, FM, Ethernet</li>
+          <li>BadUSB / HID, iButton, U2F</li>
+          <li>JavaScript scripting, Web UI companion, SD file manager</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
   <p class="warn">
-    Vigilance can transmit and probe radio and network protocols. Use it only on hardware,
-    networks and radios you own or are authorised to test. You are responsible for how you use it.
+    Vigilance can transmit and probe radio and network protocols. Use it only on hardware, networks and
+    radios you own or are authorised to test. You are responsible for how you use it.
   </p>
 
   <footer>
@@ -89,6 +193,7 @@
     A fork of <a href="https://github.com/pr3y/Bruce">Bruce</a> (AGPL-3.0). Vigilance is AGPL-3.0.
   </footer>
 
-  <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+</div>
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 </body>
 </html>
