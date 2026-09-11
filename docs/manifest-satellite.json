@@ -1,0 +1,13 @@
+{
+  "name": "Vigilance Satellite",
+  "version": "0.1.0",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        { "path": "firmware/vigilance-satellite-esp32c3.bin", "offset": 0 }
+      ]
+    }
+  ]
+}

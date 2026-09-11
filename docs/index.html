@@ -46,10 +46,15 @@
       border-radius:16px;padding:26px;margin:34px auto 0;max-width:560px;text-align:center}
     .steps{font-family:var(--mono);font-size:13px;color:var(--dim);text-align:left;line-height:1.9;margin:0 auto 20px;max-width:420px}
     .steps b{color:var(--cyan-hi);font-weight:400}
-    .flash-btn{font-family:var(--disp);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:17px;
+    .flash-btn{font-family:var(--disp);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:16px;
       background:linear-gradient(180deg,var(--cyan-hi),var(--cyan));color:#04121a;border:0;border-radius:10px;
-      padding:14px 26px;cursor:pointer;box-shadow:0 0 22px -6px var(--cyan)}
+      padding:13px 22px;cursor:pointer;box-shadow:0 0 22px -6px var(--cyan)}
+    .flash-btn.alt{background:transparent;color:var(--cyan-hi);box-shadow:none;border:1px solid var(--cyan-dim,#1a6f9e)}
+    .flash-buttons{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+    .fb{display:flex;flex-direction:column;align-items:center;gap:7px}
+    .fb-cap{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.04em}
     .note{font-family:var(--mono);font-size:12px;color:var(--amber);margin:16px 0 0}
+    code{font-family:var(--mono);background:#0d1420;border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:var(--cyan-hi);font-size:.9em}
     .unsupported{display:block;color:var(--amber);font-family:var(--mono);margin-top:10px}
     /* sections */
     section{margin-top:56px}
@@ -93,15 +98,28 @@
   <!-- flasher -->
   <div class="flash">
     <div class="steps">
-      <div>1. Plug the <b>T-Embed CC1101 Plus</b> in over USB-C.</div>
-      <div>2. Click <b>Flash Vigilance</b> below.</div>
+      <div>1. Plug your board in over USB-C.</div>
+      <div>2. Click the matching button below.</div>
       <div>3. Pick the serial port and wait. Done.</div>
     </div>
-    <esp-web-install-button manifest="./manifest.json">
-      <button slot="activate" class="flash-btn">Flash Vigilance</button>
-      <span slot="unsupported" class="unsupported">Your browser can't flash. Use Chrome, Edge, Brave or Opera on desktop.</span>
-      <span slot="not-allowed" class="unsupported">This page must be served over HTTPS to flash.</span>
-    </esp-web-install-button>
+    <div class="flash-buttons">
+      <div class="fb">
+        <esp-web-install-button manifest="./manifest.json">
+          <button slot="activate" class="flash-btn">Flash the watch</button>
+          <span slot="unsupported" class="unsupported">Use Chrome / Edge / Brave / Opera on desktop.</span>
+          <span slot="not-allowed" class="unsupported">Serve over HTTPS to flash.</span>
+        </esp-web-install-button>
+        <div class="fb-cap">T-Embed CC1101 Plus (ESP32-S3)</div>
+      </div>
+      <div class="fb">
+        <esp-web-install-button manifest="./manifest-satellite.json">
+          <button slot="activate" class="flash-btn alt">Flash a satellite</button>
+          <span slot="unsupported" class="unsupported">Use Chrome / Edge / Brave / Opera on desktop.</span>
+          <span slot="not-allowed" class="unsupported">Serve over HTTPS to flash.</span>
+        </esp-web-install-button>
+        <div class="fb-cap">Swarm node (ESP32-C3)</div>
+      </div>
+    </div>
     <p class="note">Web Serial works in Chrome / Edge / Brave / Opera on desktop only.</p>
   </div>
 
@@ -181,6 +199,18 @@
         </ul>
       </div>
     </div>
+  </section>
+
+  <!-- swarm -->
+  <section>
+    <h2>Swarm: add satellites</h2>
+    <p class="lineage">
+      Vigilance can coordinate several units over ESP-NOW. The watch is the master; cheap
+      <b>ESP32-C3</b> boards (a couple of euros each) run a lightweight satellite firmware and extend your
+      coverage. Each node scans, listens or measures on command and reports back, so you watch more ground
+      at once. Flash one with the <b>Flash a satellite</b> button above, or build it from the
+      <code>satellite/</code> folder in the repo.
+    </p>
   </section>
 
   <p class="warn">

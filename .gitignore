@@ -34,5 +34,8 @@ FINISH_PUBLISH.sh
 .DS_Store
 Thumbs.db
 
+# Vigilance: satellite build output
+satellite/.pio/
+
 # Vigilance: allow the browser-flasher binary under docs/ even though /*.bin is ignored
 !docs/firmware/*.bin

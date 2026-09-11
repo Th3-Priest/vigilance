@@ -77,6 +77,21 @@ pio run -e lilygo-t-embed-cc1101
 # merged image ends up in .pio/build/lilygo-t-embed-cc1101/firmware.factory.bin
 ```
 
+## Swarm satellite
+
+Vigilance can coordinate several units over ESP-NOW. The watch is the master;
+cheap **ESP32-C3** boards run a lightweight satellite firmware and extend your
+coverage (each node scans, listens or measures on command and reports back). The
+satellite lives in [`satellite/`](satellite/) and has its own PlatformIO project:
+
+```bash
+cd satellite
+pio run -e esp32-c3 -t upload
+```
+
+Or flash it from the browser with the "Flash a satellite" button on the
+[web flasher](https://th3-priest.github.io/vigilance/).
+
 ## Roadmap
 
 Vigilance is under active development with a long feature backlog (Swarm V2 mesh, ambient census expansions, more defensive detectors, mission profiles, theming). Watch the repo and releases to follow along.

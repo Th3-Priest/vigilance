@@ -1,5 +1,9 @@
 ---
-name: Build and Push Releases
+# Vigilance build check. Compiles the watch (T-Embed CC1101 Plus) and the swarm
+# satellite (ESP32-C3). Releases are cut by hand, so there is no auto-publish or
+# website-deploy step here (those were Bruce-specific and referenced infra this
+# fork does not have).
+name: Build
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -9,39 +13,34 @@ on:
   push:
     branches:
       - main
-      - dev
-
     paths:
-        - "**.yml"
-        - "**.h"
-        - "**.cpp"
-        - "**.py"
-        - "**.html"
-        - "**.css"
-        - "**.js"
-        - "**.ini"
-        - "**.json"
-        - "**.csv"
-    tags:
-      - "*"
+      - "**.h"
+      - "**.hpp"
+      - "**.c"
+      - "**.cpp"
+      - "**.ino"
+      - "**.py"
+      - "**.ini"
+      - "**.json"
+      - "**.csv"
+      - ".github/workflows/**"
+  pull_request:
   workflow_dispatch:
 
 jobs:
-  compile_sketch:
-    name: Build ${{ matrix.board.env }}
+  build:
+    name: Build ${{ matrix.label }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        board:
-          - { env: "lilygo-t-embed-cc1101", family: "ESP32-S3",}
-
+        include:
+          - { label: "watch (T-Embed CC1101)", env: "lilygo-t-embed-cc1101", dir: "." }
+          - { label: "satellite (ESP32-C3)",   env: "esp32-c3",              dir: "satellite" }
     steps:
       - uses: actions/checkout@v4
 
-      - id: build
-        name: setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
@@ -50,260 +49,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends gcc-multilib libc6-dev-i386
 
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
-            ${{ runner.os }}-pip-
-
-      - name: Cache PlatformIO Framework
+      - name: Cache PlatformIO
         uses: actions/cache@v4
         with:
           path: |
             ~/.platformio
-          key: ${{ runner.os }}-platformio-${{ hashFiles('platformio.ini') }}
+            ${{ matrix.dir }}/.pio/libdeps
+          key: pio-${{ matrix.env }}-${{ hashFiles(format('{0}/platformio.ini', matrix.dir)) }}
           restore-keys: |
-            ${{ runner.os }}-platformio-${{ hashFiles('platformio.ini') }}
-            ${{ runner.os }}-platformio-
+            pio-${{ matrix.env }}-
 
-      - name: PIO libraries cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            .pio/libdeps
-          key: ${{ runner.os }}-pio-${{ matrix.board.env }}-${{ hashFiles('platformio.ini') }}
-          restore-keys: |
-            ${{ runner.os }}-pio-${{ matrix.board.env }}-${{ hashFiles('platformio.ini') }}
-            ${{ runner.os }}-pio-${{ matrix.board.env }}-
+      - name: Install PlatformIO
+        run: pip install platformio
 
-      - name: Install dependencies
-        run: |
-          pip install requests esptool intelhex
-          pip install platformio
-
-      - name: Prepare PlatformIO file
-        run: |
-
-          if [[ "${{ github.ref_type }}" == "tag" ]]; then
-            version=${{ github.ref_name }}
-            sed -i "s/-D ENABLE_RAM_LOGGING=1/;-D ENABLE_RAM_LOGGING=1'\"$version\"' ; /g" ./platformio.ini
-          else
-            version="${GITHUB_SHA::7}"
-          fi
-
-          sed -i "s/-DBRUCE_VERSION=/-DBRUCE_VERSION='\"$version\"' ; /g" ./platformio.ini
-          sed -i "s/-DGIT_COMMIT_HASH='\"Homebrew\"'/\!echo '-DGIT_COMMIT_HASH=\\\\\\\\\"'\$\(git describe --always --dirty)'\\\\\\\\\"'/g" ./platformio.ini
-
-          cat ./platformio.ini
-
-      - name: Run Compile
-        run: |
-          set -o pipefail
-          platformio run -e ${{ matrix.board.env }} | tee build-${{ matrix.board.env }}.log
-
-      - name: Build summary
-        run: |
-          if [[ -f build-${{ matrix.board.env }}.log ]]; then
-            echo "Last 75 lines of build-${{ matrix.board.env }}.log:"
-            tail -n 75 build-${{ matrix.board.env }}.log
-          else
-            echo "Build log not found; nothing to show."
-          fi
-
-      - name: Upload ${{ matrix.board.env }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: Bruce-${{ matrix.board.env }}
-          path: Bruce-*.*
-          retention-days: 1
-          if-no-files-found: error
-
-  post_compile_steps:
-    name: Update Placeholders
-    runs-on: ubuntu-latest
-    environment: github_release
-    needs: compile_sketch
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') || github.ref_type == 'tag'
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: '*'
-          merge-multiple: true
-          path: artifacts
-
-      - name: Ensure releases exist and get IDs
-        id: get_release
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const ensureByTag = async (tag, prerelease=true) => {
-              try {
-                const { data } = await github.rest.repos.getReleaseByTag({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  tag
-                });
-                return data.id;
-              } catch (e) {
-                if (e.status !== 404) throw e;
-                const { data } = await github.rest.repos.createRelease({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  tag_name: tag,
-                  name: tag,
-                  prerelease
-                });
-                return data.id;
-              }
-            };
-
-            const betaId = await ensureByTag('betaRelease');
-            const lastId = await ensureByTag('lastRelease');
-
-            core.setOutput('beta', String(betaId));
-            core.setOutput('last', String(lastId));
-
-      - name: Get current sha
-        id: get_sha
-        run: |
-          echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-
-      - name: Delete old betaRelease assets
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const release_id = ${{ steps.get_release.outputs.beta }};
-            const assets = await github.rest.repos.listReleaseAssets({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: release_id
-            });
-            for (const asset of assets.data) {
-              await github.rest.repos.deleteReleaseAsset({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                asset_id: asset.id
-              });
-            }
-
-      - name: Upload new betaRelease asset
-        uses: softprops/action-gh-release@v2
-        with:
-          name: betaRelease commit (${{ steps.get_sha.outputs.GITHUB_SHA_SHORT }})
-          tag_name: betaRelease
-          prerelease: true
-          files: artifacts/**
-          fail_on_unmatched_files: false
-          make_latest: false
-          generate_release_notes: false
-
-      - name: Delete old lastRelease assets
-        uses: actions/github-script@v6
-        if: github.ref_type == 'tag'
-        with:
-          script: |
-            const release_id = ${{ steps.get_release.outputs.last }};
-            const assets = await github.rest.repos.listReleaseAssets({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: release_id
-            });
-            for (const asset of assets.data) {
-              await github.rest.repos.deleteReleaseAsset({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                asset_id: asset.id
-              });
-            }
-
-      - name: Upload new lastRelease asset
-        uses: softprops/action-gh-release@v2
-        if: github.ref_type == 'tag'
-        with:
-          name: lastRelease commit (${{ steps.get_sha.outputs.GITHUB_SHA_SHORT }})
-          tag_name: lastRelease
-          prerelease: true
-          files: artifacts/**
-          fail_on_unmatched_files: false
-          make_latest: false
-          generate_release_notes: false
-
-      - name: Checkout main to trigger WebPage deploy
-        if: ${{ success() }}
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 1
-
-      - name: Trigger WebPage deploy (workflow_dispatch)
-        if: ${{ success() }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh workflow list
-          gh workflow run .github/workflows/deploy.yml --ref WebPage
-
-  create_release:
-    runs-on: ubuntu-latest
-    environment: github_release
-    needs: [compile_sketch]
-    if: github.ref_type == 'tag'
-    permissions:
-      contents: write
-      issues: write
-    steps:
-      - id: bruce_version
-        name: Get Version
-        run: |
-          set -x
-
-          if [[ "${{ github.ref_type }}" == "tag" ]]; then
-            version=${{ github.ref_name }}
-          else
-            version="${GITHUB_SHA::7}"
-          fi
-
-          echo "version=${version}" > $GITHUB_OUTPUT
-      - uses: actions/download-artifact@v4
-        with:
-          merge-multiple: true
-
-      - name: List all files
-        if: always()
-        run: |
-          set -x
-          pwd
-          ls -all
-          tree
-
-      - name: Create Release ${{ steps.bruce_version.outputs.version }}
-        uses: softprops/action-gh-release@v1
-        with:
-          name: Bruce Release ${{ steps.bruce_version.outputs.version }}
-          tag_name: ${{ steps.bruce_version.outputs.version }}
-          generate_release_notes: true
-          files: |
-            Bruce-*.bin
-
-      - name: Close "Fixed on Beta" issues
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.bruce_version.outputs.version }}
-        run: |
-          set -x
-          gh issue list \
-            --repo "${{ github.repository }}" \
-            --label "Fixed on Beta" \
-            --state open \
-            --limit 500 \
-            --json number \
-            --jq '.[].number' | while read -r issue; do
-            [ -z "$issue" ] && continue
-            gh issue close "$issue" \
-              --repo "${{ github.repository }}" \
-              --comment "Fixed on ${VERSION}. Issue automatically closed after release"
-          done
+      - name: Build
+        working-directory: ${{ matrix.dir }}
+        run: pio run -e ${{ matrix.env }}
