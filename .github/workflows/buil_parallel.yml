@@ -59,8 +59,8 @@ jobs:
           restore-keys: |
             pio-${{ matrix.env }}-
 
-      - name: Install PlatformIO
-        run: pip install platformio
+      - name: Install PlatformIO and build-script deps
+        run: pip install platformio requests esptool intelhex
 
       - name: Build
         working-directory: ${{ matrix.dir }}

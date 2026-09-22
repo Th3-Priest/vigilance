@@ -35,8 +35,8 @@ jobs:
           restore-keys: |
             pio-release-
 
-      - name: Install PlatformIO
-        run: pip install platformio
+      - name: Install PlatformIO and build-script deps
+        run: pip install platformio requests esptool intelhex
 
       - name: Build watch (T-Embed CC1101)
         run: pio run -e lilygo-t-embed-cc1101

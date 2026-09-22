@@ -92,30 +92,32 @@ def load_checksum_file(input_file):
         return f.readline().strip()
 
 
+# Minify web assets through the toptal API when it is reachable. The API is an
+# external, best-effort dependency, so any failure (offline, timeout, rate
+# limit, error response) falls back to the original bytes instead of breaking
+# the build. The web UI just ships unminified in that case.
+def _minify(url, src):
+    raw = src.read()
+    try:
+        r = requests.post(url, {"input": raw.decode('utf-8')}, timeout=15)
+        if r.status_code == 200 and r.text:
+            return r.text.encode('utf-8')
+        print(f"[minify] {url} returned {r.status_code}, using unminified")
+    except Exception as e:
+        print(f"[minify] {url} skipped ({e}), using unminified")
+    return raw
+
+
 def minify_css(c):
-    minify_req = requests.post(
-        "https://www.toptal.com/developers/cssminifier/api/raw",
-        {"input": c.read().decode('utf-8')},
-    )
-    return c if minify_req is False else minify_req.text.encode('utf-8')
+    return _minify("https://www.toptal.com/developers/cssminifier/api/raw", c)
 
 
 def minify_js(js):
-    minify_req = requests.post(
-        'https://www.toptal.com/developers/javascript-minifier/api/raw',
-        {'input': js.read().decode('utf-8')},
-        timeout=10
-    )
-    return js if minify_req is False else minify_req.text.encode('utf-8')
+    return _minify("https://www.toptal.com/developers/javascript-minifier/api/raw", js)
 
 
 def minify_html(html):
-    minify_req = requests.post(
-        'https://www.toptal.com/developers/html-minifier/api/raw',
-        {'input': html.read().decode('utf-8')},
-        timeout=10
-    )
-    return html if minify_req is False else minify_req.text.encode('utf-8')
+    return _minify("https://www.toptal.com/developers/html-minifier/api/raw", html)
 
 
 # gzip web files
