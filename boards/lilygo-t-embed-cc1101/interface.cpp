@@ -170,6 +170,15 @@ void InputHandler(void) {
         esc = digitalRead(BK_BTN);
 #endif
     }
+
+    // Vigilance: SEL + BACK pressed together = screenshot. Consume both so the
+    // combo does not also select or go back.
+    if (sel == BTN_ACT && esc == BTN_ACT) {
+        ScreenShot = true;
+        sel = !BTN_ACT;
+        esc = !BTN_ACT;
+    }
+
     if (posDifference != 0 || sel == BTN_ACT || esc == BTN_ACT) {
         if (!wakeUpScreen()) AnyKeyPress = true;
         else return;

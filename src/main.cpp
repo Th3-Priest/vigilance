@@ -46,6 +46,7 @@ volatile bool UpPress = false;
 volatile bool DownPress = false;
 volatile bool SelPress = false;
 volatile bool EscPress = false;
+volatile bool ScreenShot = false;
 volatile bool AnyKeyPress = false;
 volatile bool NextPagePress = false;
 volatile bool PrevPagePress = false;

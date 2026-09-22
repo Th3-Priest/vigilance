@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussions
+    url: https://github.com/Th3-Priest/vigilance/discussions
+    about: Questions, ideas, and show and tell
+  - name: Upstream Bruce
+    url: https://github.com/pr3y/Bruce
+    about: Vigilance is a fork of Bruce

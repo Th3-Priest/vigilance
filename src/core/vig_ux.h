@@ -11,6 +11,9 @@
 // Main submenu (wired into Config).
 void vigilanceUxMenu();
 
+// About screen: identity, version, credits, repo.
+void vigAboutScreen();
+
 // Individual menus (also reachable directly).
 void vigThemesMenu();
 void vigProfilesMenu();

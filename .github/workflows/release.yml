@@ -1,0 +1,59 @@
+---
+# Cut a GitHub Release when a version tag is pushed (e.g. git tag v0.1.1 && git push --tags).
+# Builds the watch and the satellite, then attaches both merged binaries.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install build deps (multilib)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-multilib libc6-dev-i386
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+          key: pio-release-${{ hashFiles('platformio.ini', 'satellite/platformio.ini') }}
+          restore-keys: |
+            pio-release-
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build watch (T-Embed CC1101)
+        run: pio run -e lilygo-t-embed-cc1101
+
+      - name: Build satellite (ESP32-C3)
+        working-directory: satellite
+        run: pio run -e esp32-c3
+
+      - name: Collect binaries
+        run: |
+          mkdir -p dist
+          cp .pio/build/lilygo-t-embed-cc1101/firmware.factory.bin dist/vigilance-t-embed-cc1101.bin
+          cp satellite/.pio/build/esp32-c3/firmware.factory.bin dist/vigilance-satellite-esp32c3.bin
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.bin
+          generate_release_notes: true
+          fail_on_unmatched_files: true

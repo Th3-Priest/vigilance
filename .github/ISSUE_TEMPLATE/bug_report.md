@@ -1,24 +1,20 @@
 ---
 name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
-
+about: Something does not work as expected
+labels: bug
 ---
 
-**Describe the bug:**
-<!-- A clear and concise description of what the bug is. -->
+**Board / hardware**
+(e.g. T-Embed CC1101 Plus, plus any modules attached)
 
-**Steps To Reproduce:**
-<!-- Steps to reproduce the behavior. -->
-- Device used: 
+**Firmware version**
+(release tag or commit hash)
 
-**Expected behavior:**
-<!-- A clear and concise description of what you expected to happen. -->
+**What you did**
 
-**Actual behavior:**
-<!-- A clear and concise description of what actually happened. -->
+**What you expected**
 
-**Additional context / logs:**
-<!-- Add any other context and/or logs about the problem here. -->
+**What happened**
+
+**Logs or photos**
+(serial output, a screenshot from the SD, or a photo of the screen)

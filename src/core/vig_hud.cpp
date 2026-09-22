@@ -74,8 +74,80 @@ TFT_eSprite *vigHudSprite() {
     return s_spr;
 }
 
+// Dump the framebuffer to SD as a 24-bit BMP (/Vigilance/shots/shot_NNN.bmp).
+// Reads the sprite back pixel by pixel, so it captures exactly what is on screen.
+static void vigHudSaveShot(TFT_eSprite &s) {
+    FS *fs;
+    if (!getFsStorage(fs)) return;
+    if (!(*fs).exists("/Vigilance")) (*fs).mkdir("/Vigilance");
+    if (!(*fs).exists("/Vigilance/shots")) (*fs).mkdir("/Vigilance/shots");
+
+    char path[40];
+    int n = 0;
+    do {
+        snprintf(path, sizeof(path), "/Vigilance/shots/shot_%03d.bmp", n++);
+    } while ((*fs).exists(path) && n < 1000);
+
+    File f = (*fs).open(path, FILE_WRITE);
+    if (!f) return;
+
+    const int W = s.width(), H = s.height();
+    const int rowSize = (W * 3 + 3) & ~3;
+    const uint32_t fileSize = 54 + (uint32_t)rowSize * H;
+
+    uint8_t hdr[54];
+    memset(hdr, 0, sizeof(hdr));
+    hdr[0] = 'B';
+    hdr[1] = 'M';
+    hdr[2] = fileSize;
+    hdr[3] = fileSize >> 8;
+    hdr[4] = fileSize >> 16;
+    hdr[5] = fileSize >> 24;
+    hdr[10] = 54; // pixel data offset
+    hdr[14] = 40; // DIB header size
+    hdr[18] = W;
+    hdr[19] = W >> 8;
+    hdr[22] = H;
+    hdr[23] = H >> 8;
+    hdr[26] = 1;  // planes
+    hdr[28] = 24; // bits per pixel
+    f.write(hdr, 54);
+
+    uint8_t *row = (uint8_t *)malloc(rowSize);
+    if (!row) {
+        f.close();
+        return;
+    }
+    for (int y = H - 1; y >= 0; y--) { // BMP rows are bottom-up
+        int p = 0;
+        for (int x = 0; x < W; x++) {
+            uint16_t c = s.readPixel(x, y);
+            row[p++] = (uint8_t)((c & 0x1F) * 255 / 31);         // B
+            row[p++] = (uint8_t)(((c >> 5) & 0x3F) * 255 / 63);  // G
+            row[p++] = (uint8_t)(((c >> 11) & 0x1F) * 255 / 31); // R
+        }
+        while (p < rowSize) row[p++] = 0;
+        f.write(row, rowSize);
+    }
+    free(row);
+    f.close();
+}
+
 void vigHudPush() {
-    if (s_spr) s_spr->pushSprite(0, 0);
+    if (!s_spr) return;
+    s_spr->pushSprite(0, 0);
+    if (ScreenShot) {
+        ScreenShot = false;
+        vigHudSaveShot(*s_spr);
+        const VigPal &p = vigPal();
+        tft.fillRoundRect(tftWidth / 2 - 48, tftHeight / 2 - 13, 96, 26, 6, p.bg);
+        tft.drawRoundRect(tftWidth / 2 - 48, tftHeight / 2 - 13, 96, 26, 6, p.acc);
+        tft.setTextColor(p.acc, p.bg);
+        tft.setTextDatum(MC_DATUM);
+        tft.drawString("SHOT SAVED", tftWidth / 2, tftHeight / 2, 1);
+        tft.setTextDatum(TL_DATUM);
+        delay(550);
+    }
 }
 
 // ---------------- primitives ----------------

@@ -570,6 +570,7 @@ int loopOptions(
     while (1) {
         // Check for shutdown before drawing menu to avoid drawing a black bar on the screen
         if (exit) break;
+        if (ScreenShot) redraw = true; // Vigilance: re-render so the HUD screen gets captured
         if (menuType == MENU_TYPE_MAIN) {
             checkReboot();
             if (devModeCounter >= 5 && !bruceConfig.devMode) {

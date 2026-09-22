@@ -14,6 +14,8 @@
 #include <globals.h>
 #include <vector>
 
+#include "vig_hud.h"
+
 #ifdef HAS_RGB_LED
 #include "core/led_control.h"
 #endif
@@ -226,6 +228,48 @@ static void vigApplyBreath(bool on) {
 #endif
 }
 
+// ---------------- About ----------------
+void vigAboutScreen() {
+    const VigPal &p = vigPal();
+    int cx = tftWidth / 2;
+    TFT_eSprite *sp = vigHudSprite();
+    if (sp) {
+        TFT_eSprite &s = *sp;
+        vigHudBackground(s);
+        vigHudRing(s, cx, 26, 7, 6, p.acc, p.bg);
+        s.drawSpot((float)cx, 26.0f, 2.2f, p.accHi);
+        s.setTextDatum(MC_DATUM);
+        s.setTextColor(p.acc);
+        s.setTextSize(2);
+        s.drawString("VIGILANCE", cx, 46, 1);
+        s.setTextSize(1);
+        s.setTextColor(p.textDim);
+        s.drawString(String("version ") + BRUCE_VERSION, cx, 66, 1);
+        s.setTextColor(p.text);
+        s.drawString("Defensive surveillance HUD", cx, 88, 1);
+        s.setTextColor(p.textDim);
+        s.drawString("Fork of Bruce (pr3y) and Sor3nt", cx, 106, 1);
+        s.drawString("AGPL-3.0", cx, 120, 1);
+        s.setTextColor(p.acc);
+        s.drawString("github.com/Th3-Priest/vigilance", cx, 138, 1);
+        s.setTextColor(p.textDim);
+        s.drawString("SEL / BACK to return", cx, tftHeight - 12, 1);
+        s.setTextDatum(TL_DATUM);
+        vigHudPush();
+    } else {
+        drawMainBorderWithTitle("ABOUT");
+        tft.setTextDatum(MC_DATUM);
+        tft.setTextColor(bruceConfig.priColor, bruceConfig.bgColor);
+        tft.drawString("VIGILANCE " + String(BRUCE_VERSION), cx, 50, 1);
+        tft.setTextColor(bruceConfig.secColor, bruceConfig.bgColor);
+        tft.drawString("Fork of Bruce and Sor3nt", cx, 74, 1);
+        tft.drawString("AGPL-3.0", cx, 90, 1);
+        tft.drawString("github.com/Th3-Priest/vigilance", cx, 110, 1);
+        tft.setTextDatum(TL_DATUM);
+    }
+    while (!check(SelPress) && !check(EscPress)) delay(30);
+}
+
 // ---------------- Main submenu ----------------
 void vigilanceUxMenu() {
     for (;;) {
@@ -257,6 +301,7 @@ void vigilanceUxMenu() {
                  vigFlagSave("/Vigilance/standby.cfg", g_standby == 1);
              }}
         );
+        o.push_back({"About", []() { vigAboutScreen(); }});
         o.push_back({"Back", []() {}});
         int s = loopOptions(o, MENU_TYPE_SUBMENU, "Vigilance UX");
         if (s == -1 || s == (int)o.size() - 1) return;

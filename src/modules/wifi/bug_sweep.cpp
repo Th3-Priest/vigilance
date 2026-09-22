@@ -11,23 +11,31 @@
 #include "core/event_log.h"
 #include "core/mykeyboard.h"
 #include "core/oui_vendor.h"
+#include "core/vig_report.h"
 #include <WiFi.h>
 #include <globals.h>
 #include <vector>
 
 // Typical camera / NVR / DVR SSID patterns (compared in UPPERCASE).
 static const char *CAM_SSID[] = {
-    "IPCAM",  "IPC-",   "IP-CAM", "CAMERA",  "-CAM-",   "NETCAM",  "NVR",     "DVR-",
-    "HIKVI",  "DS-",    "DAHUA",  "REOLINK", "WYZE",    "TAPO",    "EZVIZ",   "V380",
-    "SRICAM", "FOSCAM", "XMEYE",  "YCC365",  "ESP32-CAM", "GOOGLECAST", "ANRAN", "LOROX",
-    "IMOU",   "ANNKE",  "SWANN",  "ARLO",    "BLINK",   "NEST-CAM",
+    "IPCAM",    "IPC-",    "IP-CAM",   "IPCAMERA", "CAMERA",   "-CAM-",     "NETCAM",   "WEBCAM",
+    "SPYCAM",   "MINICAM", "SMARTCAM", "SECURITYCAM", "DOORBELL", "NVR",    "DVR-",
+    "HIKVI",    "DS-",     "DAHUA",    "REOLINK",  "WYZE",     "TAPO",      "EZVIZ",    "V380",
+    "SRICAM",   "FOSCAM",  "XMEYE",    "YCC365",   "YCC",      "ESP32-CAM", "ESPCAM",   "GOOGLECAST",
+    "ANRAN",    "LOROX",   "IMOU",     "ANNKE",    "SWANN",    "ARLO",      "BLINK",    "NEST-CAM",
+    "VSTARCAM", "EYE4",    "JOOAN",    "ZOSI",     "AMCREST",  "LOREX",     "VIVOTEK",  "WISENET",
+    "MOBOTIX",  "GEENI",   "MERKURY",  "WANSVIEW", "CLOUDEDGE","XIONGMAI",  "HISEEU",   "CTRONICS",
+    "LITTLELF", "IEGEEK",  "TOPODOME", "GOKE",
 };
 
-// OUIs of surveillance-focused vendors (extra hint).
+// OUIs of surveillance-focused vendors (extra hint, catches hidden-SSID cams).
 static const uint32_t CAM_OUI[] = {
     0x4419B6, 0x4CBD8F, 0x5803FB, 0xC056E3, 0xBCAD28, 0x2857BE, // Hikvision
     0x3CEF8C, 0x9002A9, 0x14A78B, 0x08EDED,                     // Dahua
     0xEC71DB, 0x7C4B4D,                                         // Reolink / misc
+    0x00408C, 0xACCC8E, 0xB8A44F,                               // Axis
+    0x2CAA8E,                                                   // Wyze
+    0x00626E,                                                   // Foscam
 };
 
 static bool camByOui(const uint8_t *b) {
@@ -56,6 +64,8 @@ static bool looksLikeCam(const String &ssid, const uint8_t *bssid, String &why) 
 void bug_sweep_setup() {
     returnToMenu = false;
     const uint16_t ac = bruceConfig.priColor, dimc = bruceConfig.secColor, bg = bruceConfig.bgColor;
+    bool reportSaved = false;
+    String reportPath = "";
 
     for (;;) {
         drawMainBorderWithTitle("BUG SWEEP");
@@ -103,8 +113,20 @@ void bug_sweep_setup() {
                 y += 20;
             }
             vigLogEvent("BUGSWEEP", String((int)hits.size()) + " cam?");
+            if (!reportSaved) {
+                String body = "Vigilance Bug Sweep\n";
+                body += String((int)hits.size()) + " likely cameras / " + String(n) + " APs\n\n";
+                for (auto &h : hits) body += h.ssid + "  " + String(h.rssi) + "dB  " + h.why + "\n";
+                reportPath = vigSaveReport("bugsweep", body);
+                reportSaved = true;
+            }
         }
         tft.setTextColor(dimc, bg);
+        if (!hits.empty()) tft.drawString("IP cams often expose RTSP :554", 10, tftHeight - 34, 1);
+        if (reportPath.length()) {
+            int sl = reportPath.lastIndexOf('/');
+            tft.drawString("Report: " + reportPath.substring(sl + 1), 10, tftHeight - 23, 1);
+        }
         tft.drawString("SEL: rescan   ESC: quit", 10, tftHeight - 12, 1);
 
         for (;;) {

@@ -209,6 +209,7 @@ extern volatile bool SelPress;
 extern volatile bool EscPress;
 
 extern volatile bool AnyKeyPress;
+extern volatile bool ScreenShot; // Vigilance: set by the SEL+BACK combo, dumps the HUD to SD
 
 extern volatile bool NextPagePress;
 

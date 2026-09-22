@@ -15,6 +15,7 @@
 #include "core/display.h"
 #include "core/event_log.h"
 #include "core/vig_env.h"
+#include "core/vig_report.h"
 #include "core/led_control.h"
 #include "core/oui_vendor.h"
 #include "core/mykeyboard.h"
@@ -469,6 +470,17 @@ void watch_mode_setup() {
             dirty = false;
             lastDraw = now;
         }
+    }
+
+    // Session report to SD, a shareable summary of the run.
+    {
+        String body = "Vigilance Watch Mode\n";
+        body += "Devices seen: " + String(devicesSeen) + "\n";
+        body += "Fixed: " + String(fixedN) + "  Random: " + String(randN) + "\n";
+        body += "Alerts: " + String(alertsCount) + "\n";
+        body += "Last deauth/s: " + String(deauthRate) + "  (threshold " + String(threshold) + ")\n";
+        if (lastAlert.length()) body += "Last alert: " + lastAlert + "\n";
+        vigSaveReport("watch", body);
     }
 
     wm_stop_wifi();

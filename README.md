@@ -19,6 +19,12 @@
 
 ---
 
+<p align="center">
+  <img src="docs/media/home.png" width="32%" alt="Sentinel HUD home">
+  <img src="docs/media/standby.png" width="32%" alt="Standby scene">
+  <img src="docs/media/menu.png" width="32%" alt="HUD menu">
+</p>
+
 ## Why Vigilance
 
 Most ESP32 security firmwares look and feel like a debug console. Vigilance ships a real interface: a **framebuffer HUD** rendered with anti-aliased primitives, so it reads like a product instead of a terminal.
@@ -31,14 +37,14 @@ Most ESP32 security firmwares look and feel like a debug console. Vigilance ship
 
 Vigilance leads with the tools that protect you. It is built for finding surveillance, not just doing it.
 
-- **Bug Sweep** — flags likely WiFi cameras and recorders nearby (by SSID pattern and vendor OUI), to check a hotel room or an Airbnb before you settle in. Passive, no transmission.
-- **BLE Watch (anti-tracker)** — detects AirTag / SmartTag / Tile / Chipolo style trackers and warns when one has been following you across time.
-- **Tail Watch** — learns the RF "zones" you move through and raises a flag when the same device reappears zone after zone, the signature of someone tailing you.
-- **Deauth detection** — Watch Mode alerts on WiFi deauthentication attacks in your area.
-- **Sub-GHz Census** — passively catalogs the 433 / 315 / 868 MHz devices broadcasting around you.
-- **Journal** — an on-device timeline of every alert, colour coded by severity.
-- **Guardian Eye** and **Sentinel Pulse** — an ambient threat indicator on screen and on the RGB LED.
-- **Swarm** — link several units over ESP-NOW to cover more ground together.
+- **Bug Sweep** - flags likely WiFi cameras and recorders nearby (by SSID pattern and vendor OUI), to check a hotel room or an Airbnb before you settle in. Passive, no transmission.
+- **BLE Watch (anti-tracker)** - detects AirTag / SmartTag / Tile / Chipolo style trackers and warns when one has been following you across time.
+- **Tail Watch** - learns the RF "zones" you move through and raises a flag when the same device reappears zone after zone, the signature of someone tailing you.
+- **Deauth detection** - Watch Mode alerts on WiFi deauthentication attacks in your area.
+- **Sub-GHz Census** - passively catalogs the 433 / 315 / 868 MHz devices broadcasting around you.
+- **Journal** - an on-device timeline of every alert, colour coded by severity.
+- **Guardian Eye** and **Sentinel Pulse** - an ambient threat indicator on screen and on the RGB LED.
+- **Swarm** - link several units over ESP-NOW to cover more ground together.
 
 It also inherits Bruce's full offensive and RF toolkit (Sub-GHz, NFC/RFID, IR, 2.4 GHz NRF, WiFi, BLE, GPS, scripting, web UI). Use it responsibly, see [Legal](#legal).
 
@@ -76,6 +82,12 @@ cd vigilance
 pio run -e lilygo-t-embed-cc1101
 # merged image ends up in .pio/build/lilygo-t-embed-cc1101/firmware.factory.bin
 ```
+
+## Screenshots
+
+Press the encoder and the back button at the same time to save the current HUD
+screen to `/Vigilance/shots` on the SD card, as a BMP. Handy for sharing your
+setup.
 
 ## Swarm satellite
 
